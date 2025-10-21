@@ -1,102 +1,104 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// 🟩 Supabase接続設定
 const SUPABASE_URL = "https://axeoezwxjjnghtyfmjnz.supabase.co";
-const SUPABASE_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4ZW9lend4ampuZ2h0eWZtam56Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4NTE2NjQsImV4cCI6MjA3NjQyNzY2NH0.79UMcuggtqTpbghbXkjtR8g2FYGSTbpasHBd6hcf2Gw";
-
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4ZW9lend4ampuZ2h0eWZtam56Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4NTE2NjQsImV4cCI6MjA3NjQyNzY2NH0.79UMcuggtqTpbghbXkjtR8g2FYGSTbpasHBd6hcf2Gw";
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let selectedDate = null;
-
+// 🟨 DOM構築後に初期化
 document.addEventListener("DOMContentLoaded", async () => {
   const calendarEl = document.getElementById("calendar");
-  const events = await loadCalendarData();
+  const modal = document.getElementById("modal");
+  const modalTitle = document.getElementById("modal-title");
+  const memberList = document.getElementById("member-list");
+  const nicknameInput = document.getElementById("nickname-input");
+  const reserveBtn = document.getElementById("reserve-btn");
+  const cancelBtn = document.getElementById("cancel-btn");
+  const closeBtn = document.getElementById("close-btn");
 
+  // カレンダー初期化
   const calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: "dayGridMonth",
     locale: "ja",
-    events: events,
-    dateClick: async function (info) {
-      const eventExists = events.some((e) => e.start === info.dateStr);
-      if (!eventExists) return; // ✅ 予定なし日付は押下無効
+    height: "auto",
+    events: await loadEvents(),
+    dateClick: async (info) => {
+      const events = await loadEvents();
+      const clickedEvent = events.find(e => e.start === info.dateStr);
 
-      selectedDate = info.dateStr;
-      openModal(info.dateStr);
+      if (!clickedEvent) {
+        alert("この日にはイベントがありません。");
+        return;
+      }
+
+      modal.style.display = "flex";
+      modalTitle.textContent = `${clickedEvent.title}｜${info.dateStr} の参加者`;
+
+      const { data: reservations } = await supabase
+        .from("reservations")
+        .select("*")
+        .eq("date", info.dateStr)
+        .eq("status", "reserved");
+
+      memberList.innerHTML = reservations.length
+        ? reservations.map(r => `・${r.nickname}`).join("<br>")
+        : "（まだ参加者はいません）";
+
+      reserveBtn.onclick = async () => {
+        const name = nicknameInput.value.trim();
+        if (!name) return alert("名前を入力してください");
+
+        await supabase.from("reservations").insert([
+          { date: info.dateStr, nickname: name, status: "reserved" },
+        ]);
+        alert("予約しました！");
+        modal.style.display = "none";
+        calendar.refetchEvents();
+      };
+
+      cancelBtn.onclick = async () => {
+        const name = nicknameInput.value.trim();
+        if (!name) return alert("キャンセルする名前を入力してください");
+
+        await supabase
+          .from("reservations")
+          .update({ status: "canceled" })
+          .eq("date", info.dateStr)
+          .eq("nickname", name);
+        alert("キャンセル完了！");
+        modal.style.display = "none";
+        calendar.refetchEvents();
+      };
+
+      closeBtn.onclick = () => (modal.style.display = "none");
     },
   });
 
   calendar.render();
 });
 
-// 🟦 イベント・予約データ取得
-async function loadCalendarData() {
-  const { data: eventData } = await supabase.from("calendar_events").select("title, date");
-  const { data: reservationData } = await supabase.from("trybe_reservations").select("date, status");
+// 🟦 イベント情報を取得（予約人数含む）
+async function loadEvents() {
+  const { data: events, error: eventsError } = await supabase
+    .from("calendar_events")
+    .select("*");
+  if (eventsError) {
+    console.error("イベント取得エラー:", eventsError);
+    return [];
+  }
 
-  const countMap = {};
-  reservationData
-    .filter((r) => r.status === "reserved")
-    .forEach((r) => (countMap[r.date] = (countMap[r.date] || 0) + 1));
+  const { data: reservations } = await supabase
+    .from("reservations")
+    .select("*")
+    .eq("status", "reserved");
 
-  return eventData.map((e) => ({
-    title: `${e.title}（${countMap[e.date] || 0}名）`,
+  const counts = reservations.reduce((acc, r) => {
+    acc[r.date] = (acc[r.date] || 0) + 1;
+    return acc;
+  }, {});
+
+  return events.map(e => ({
+    title: `${e.title}（${counts[e.date] || 0}名）`,
     start: e.date,
   }));
 }
-
-// 🟩 モーダル表示
-async function openModal(date) {
-  const modal = document.getElementById("modal");
-  const titleEl = document.getElementById("modal-title");
-  const listEl = document.getElementById("member-list");
-
-  const { data: reservations } = await supabase
-    .from("trybe_reservations")
-    .select("nickname, status")
-    .eq("date", date);
-
-  const members = reservations
-    .filter((r) => r.status === "reserved")
-    .map((r) => `・${r.nickname}`)
-    .join("<br>") || "（参加者なし）";
-
-  titleEl.innerHTML = `📅 ${date} の参加者一覧`;
-  listEl.innerHTML = members;
-  modal.style.display = "block";
-}
-
-// 🟥 モーダル操作
-document.getElementById("close-btn").onclick = () =>
-  (document.getElementById("modal").style.display = "none");
-
-document.getElementById("reserve-btn").onclick = async () => {
-  const nickname = document.getElementById("nickname-input").value.trim();
-  if (!nickname) return alert("名前を入力してください");
-
-  const { error } = await supabase
-    .from("trybe_reservations")
-    .insert([{ date: selectedDate, nickname, status: "reserved" }]);
-
-  if (error) alert("登録失敗：" + error.message);
-  else {
-    alert("✅ 予約完了！");
-    location.reload();
-  }
-};
-
-document.getElementById("cancel-btn").onclick = async () => {
-  const nickname = document.getElementById("nickname-input").value.trim();
-  if (!nickname) return alert("名前を入力してください");
-
-  const { data, error } = await supabase
-    .from("trybe_reservations")
-    .update({ status: "canceled" })
-    .eq("date", selectedDate)
-    .eq("nickname", nickname);
-
-  if (error) alert("キャンセル失敗：" + error.message);
-  else {
-    alert("🚫 キャンセル完了！");
-    location.reload();
-  }
-};
