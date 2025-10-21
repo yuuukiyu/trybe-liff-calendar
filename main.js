@@ -7,33 +7,32 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 document.addEventListener("DOMContentLoaded", async () => {
   const calendarEl = document.getElementById("calendar");
 
-  const events = await loadEvents();
+  // 🟩 イベント＋予約データを結合
+  const events = await loadCalendarData();
 
   const calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: "dayGridMonth",
     locale: "ja",
     events: events,
 
-    // 🟩 日付クリックイベント
+    // 日付クリックで予約登録
     dateClick: async function(info) {
       const date = info.dateStr;
       const nickname = prompt(`【${date}】に参加する名前を入力してください：`);
-
       if (!nickname) return;
 
       const confirmJoin = confirm(`${nickname} さんとして ${date} の予約を登録しますか？`);
       if (!confirmJoin) return;
 
-const { data, error } = await supabase
-  .from("trybe_reservations") // ← 新しいテーブル名
-  .insert([{ date: date, nickname: nickname, status: "reserved" }]);
-
+      const { error } = await supabase
+        .from("trybe_reservations")
+        .insert([{ date, nickname, status: "reserved" }]);
 
       if (error) {
         alert("❌ 登録に失敗しました：" + error.message);
       } else {
         alert("✅ 予約登録が完了しました！");
-        location.reload(); // 再読み込みで反映
+        location.reload();
       }
     }
   });
@@ -41,19 +40,32 @@ const { data, error } = await supabase
   calendar.render();
 });
 
-// 🟩 イベント表示（calendar_eventsテーブルから）
-async function loadEvents() {
-  const { data, error } = await supabase
+// 🟩 イベント＋予約数を読み込む
+async function loadCalendarData() {
+  // イベント取得
+  const { data: eventData, error: eventError } = await supabase
     .from("calendar_events")
     .select("title, date");
 
-  if (error) {
-    console.error("Error fetching events:", error);
+  // 予約数取得
+  const { data: reservationData, error: resError } = await supabase
+    .from("trybe_reservations")
+    .select("date, nickname");
+
+  if (eventError || resError) {
+    console.error("Error fetching data:", eventError || resError);
     return [];
   }
 
-  return data.map(event => ({
-    title: event.title,
-    start: event.date
+  // 日ごとの予約人数を集計
+  const countMap = {};
+  reservationData.forEach(r => {
+    countMap[r.date] = (countMap[r.date] || 0) + 1;
+  });
+
+  // イベント＋予約数をまとめて表示
+  return eventData.map(e => ({
+    title: `${e.title}（${countMap[e.date] || 0}名）`,
+    start: e.date
   }));
 }
