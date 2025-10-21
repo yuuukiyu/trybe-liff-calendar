@@ -4,12 +4,29 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TRYBE予約カレンダー</title>
-  <link href="style.css" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
-  <script type="module" src="main.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>🏃 TRYBE予約カレンダー</h1>
+  <h2>🏃‍♂️ TRYBE予約カレンダー</h2>
   <div id="calendar"></div>
+
+  <!-- 🟩 モーダル -->
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <h3 id="modal-title"></h3>
+      <div id="member-list"></div>
+
+      <input type="text" id="nickname-input" placeholder="あなたの名前を入力" />
+      <div class="btn-group">
+        <button id="reserve-btn">参加する</button>
+        <button id="cancel-btn">キャンセル</button>
+        <button id="close-btn">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="main.js"></script>
 </body>
 </html>
