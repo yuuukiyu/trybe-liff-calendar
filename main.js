@@ -1,3 +1,21 @@
+import "@line/liff";
+
+const LIFF_ID = "2008316836-YLR2y1Zj"; // ← あなたのLIFF ID
+
+// LIFF初期化
+liff.init({ liffId: LIFF_ID })
+  .then(async () => {
+    if (!liff.isLoggedIn()) {
+      liff.login();
+    } else {
+      const profile = await liff.getProfile();
+      window.LINE_USER_ID = profile.userId;
+      window.LINE_NAME = profile.displayName;
+      console.log("LINEログイン成功:", profile.displayName);
+    }
+  })
+  .catch((err) => console.error("LIFF初期化エラー:", err));
+
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 // Supabase接続設定
