@@ -4,13 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>🏃 TRYBE予約カレンダー</title>
+
+  <!-- FullCalendar -->
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js"></script>
-  <!-- ✅ LIFF SDKをCDNから読み込み -->
+
+  <!-- LIFF SDK -->
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <script>
-  window.FullCalendar = FullCalendar;
-</script>
 
   <style>
     body {
@@ -115,16 +115,15 @@
     </div>
   </div>
 
+  <!-- ✅ ここからメインスクリプト（FullCalendarが確実にロードされた後） -->
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-    // Supabase設定
     const SUPABASE_URL = "https://axeoezwxjjnghtyfmjnz.supabase.co";
     const SUPABASE_ANON_KEY =
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4ZW9lend4ampuZ2h0eWZtam56Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4NTE2NjQsImV4cCI6MjA3NjQyNzY2NH0.79UMcuggtqTpbghbXkjtR8g2FYGSTbpasHBd6hcf2Gw";
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // LIFF設定
     const LIFF_ID = "2008316836-YLR2y1Zj";
 
     document.addEventListener("DOMContentLoaded", async () => {
@@ -148,6 +147,12 @@
 
     async function initCalendar() {
       const calendarEl = document.getElementById("calendar");
+
+      // ✅ FullCalendarがロードされているか確認
+      if (typeof FullCalendar === "undefined") {
+        alert("FullCalendarの読み込みに失敗しました。");
+        return;
+      }
 
       const { data: events, error } = await supabase.from("calendar_events").select("*");
       if (error) {
