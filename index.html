@@ -5,12 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>🏃 TRYBE予約カレンダー</title>
 
-  <!-- FullCalendar -->
-  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js"></script>
+<!-- FullCalendar -->
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 
-  <!-- LIFF SDK -->
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<!-- LIFF SDK -->
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
 
   <style>
     body {
@@ -147,12 +148,6 @@
 
     async function initCalendar() {
       const calendarEl = document.getElementById("calendar");
-
-      // ✅ FullCalendarがロードされているか確認
-      if (typeof FullCalendar === "undefined") {
-        alert("FullCalendarの読み込みに失敗しました。");
-        return;
-      }
 
       const { data: events, error } = await supabase.from("calendar_events").select("*");
       if (error) {
