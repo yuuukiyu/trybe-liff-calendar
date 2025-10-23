@@ -2,7 +2,8 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 // Supabase接続設定
 const SUPABASE_URL = "https://axeoezwxjjnghtyfmjnz.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4ZW9lend4ampuZ2h0eWZtam56Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4NTE2NjQsImV4cCI6MjA3NjQyNzY2NH0.79UMcuggtqTpbghbXkjtR8g2FYGSTbpasHBd6hcf2Gw";
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4ZW9lend4ampuZ2h0eWZtam56Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4NTE2NjQsImV4cCI6MjA3NjQyNzY2NH0.79UMcuggtqTpbghbXkjtR8g2FYGSTbpasHBd6hcf2Gw";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -16,79 +17,120 @@ document.addEventListener("DOMContentLoaded", async () => {
   const cancelBtn = document.getElementById("cancelBtn");
   const closeBtn = document.getElementById("closeBtn");
 
-  // イベントロード
-  const { data: events, error } = await supabase.from("events").select("*");
-  if (error) {
-    alert("イベント取得エラー: " + error.message);
-    return;
+  let events = [];
+  let calendar;
+
+  // ===== イベントと人数をロード =====
+  async function loadEvents() {
+    const { data: eventsData, error: eventsError } = await supabase
+      .from("events")
+      .select("*");
+
+    const { data: reservations, error: resError } = await supabase
+      .from("reservations")
+      .select("*")
+      .eq("status", "reserved");
+
+    if (eventsError || resError) {
+      console.error(eventsError || resError);
+      alert("データ取得エラー");
+      return [];
+    }
+
+    // イベントごとに参加人数を集計
+    const eventCounts = {};
+    reservations.forEach((r) => {
+      if (!eventCounts[r.date]) eventCounts[r.date] = 0;
+      eventCounts[r.date]++;
+    });
+
+    return eventsData.map((e) => ({
+      id: e.id,
+      title: `${e.title}（${eventCounts[e.date] || 0}名）`,
+      start: e.date,
+    }));
   }
 
-  const calendar = new FullCalendar.Calendar(calendarEl, {
-    initialView: "dayGridMonth",
-    locale: "ja",
-    events: events.map(e => ({
-      id: e.id,
-      title: e.title,
-      start: e.date,
-    })),
-    dateClick: function(info) {
-      // 該当日にイベントがあるかチェック
-      const event = events.find(e => e.date === info.dateStr);
-      if (!event) return; // 予定がない日はクリック無効
+  // ===== カレンダー初期化 =====
+  async function renderCalendar() {
+    events = await loadEvents();
+    if (calendar) calendar.destroy();
 
-      openModal(event);
-    },
-  });
+    calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: "dayGridMonth",
+      locale: "ja",
+      events: events,
+      dateClick: (info) => {
+        const event = events.find((e) => e.start === info.dateStr);
+        if (!event) return; // 予定なし日は無反応
+        openModal(event);
+      },
+    });
 
-  calendar.render();
+    calendar.render();
+  }
 
-  // モーダル開く
+  // ===== モーダル表示 =====
   async function openModal(event) {
     modal.style.display = "flex";
-    modalTitle.textContent = `${event.title} | ${event.date} の参加者`;
+    modalTitle.textContent = `${event.title.split("（")[0]}｜${event.start} の参加者`;
 
-    // 予約一覧取得
     const { data: reservations } = await supabase
       .from("reservations")
       .select("*")
-      .eq("date", event.date)
+      .eq("date", event.start)
       .eq("status", "reserved");
 
     participantList.innerHTML =
       reservations && reservations.length > 0
-        ? reservations.map(r => `<li>${r.user_name}</li>`).join("")
+        ? reservations.map((r) => `<li>${r.user_name}</li>`).join("")
         : "<li>まだ参加者はいません</li>";
 
     joinBtn.onclick = async () => {
       const name = nameInput.value.trim();
-      if (!name) {
-        alert("名前を入力してください");
-        return;
-      }
-      await supabase.from("reservations").insert([
-        { user_name: name, date: event.date, status: "reserved" },
+      if (!name) return alert("名前を入力してください");
+
+      const { error } = await supabase.from("reservations").insert([
+        { user_name: name, date: event.start, status: "reserved" },
       ]);
-      alert("✅ 予約しました！");
+
+      if (error) return alert("登録エラー: " + error.message);
+      alert("✅ 参加登録しました！");
       modal.style.display = "none";
-      location.reload();
+      await renderCalendar(); // 即更新
     };
 
     cancelBtn.onclick = async () => {
       const name = nameInput.value.trim();
-      if (!name) {
-        alert("名前を入力してください");
-        return;
-      }
-      await supabase
+      if (!name) return alert("名前を入力してください");
+
+      const { error } = await supabase
         .from("reservations")
         .update({ status: "canceled" })
         .eq("user_name", name)
-        .eq("date", event.date);
+        .eq("date", event.start);
+
+      if (error) return alert("キャンセル失敗: " + error.message);
       alert("❌ キャンセルしました");
       modal.style.display = "none";
-      location.reload();
+      await renderCalendar(); // 即更新
     };
 
     closeBtn.onclick = () => (modal.style.display = "none");
   }
+
+  // ===== 初回レンダー =====
+  await renderCalendar();
+
+  // ===== Supabaseリアルタイム購読 =====
+  supabase
+    .channel("realtime:reservations")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "reservations" },
+      async () => {
+        await renderCalendar(); // 他ユーザー変更も即反映
+      }
+    )
+    .subscribe();
 });
