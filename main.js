@@ -127,3 +127,6 @@ async function openModal(event) {
     modal.style.display = "none";
   };
 }
+
+await fetch(`/api/notify?userName=${window.LINE_NAME}&action=reserve`);
+await fetch(`/api/notify?userName=${window.LINE_NAME}&action=cancel`);
