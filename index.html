@@ -6,6 +6,8 @@
   <title>🏃 TRYBE予約カレンダー</title>
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js"></script>
+  <!-- ✅ LIFF SDKをCDNから読み込み -->
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     body {
       font-family: "Noto Sans JP", sans-serif;
@@ -14,9 +16,7 @@
       text-align: center;
     }
 
-    h1 {
-      margin: 20px 0;
-    }
+    h1 { margin: 20px 0; }
 
     #calendar {
       max-width: 900px;
@@ -27,15 +27,12 @@
       padding: 10px;
     }
 
-    /* モーダル */
     .modal {
       display: none;
       position: fixed;
       z-index: 100;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
       background: rgba(0, 0, 0, 0.6);
       justify-content: center;
       align-items: center;
@@ -48,7 +45,7 @@
       width: 90%;
       max-width: 400px;
       text-align: center;
-      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 5px 20px rgba(0,0,0,0.3);
     }
 
     .btn-row {
@@ -67,24 +64,11 @@
       transition: opacity 0.2s;
     }
 
-    button:hover {
-      opacity: 0.85;
-    }
+    button:hover { opacity: 0.85; }
 
-    #joinBtn {
-      background: #007bff;
-      color: #fff;
-    }
-
-    #cancelBtn {
-      background: #dc3545;
-      color: #fff;
-    }
-
-    #closeBtn {
-      background: #6c757d;
-      color: #fff;
-    }
+    #joinBtn { background: #007bff; color: #fff; }
+    #cancelBtn { background: #dc3545; color: #fff; }
+    #closeBtn { background: #6c757d; color: #fff; }
 
     input {
       width: 80%;
@@ -107,12 +91,6 @@
       margin: 5px 0;
       border-radius: 6px;
     }
-
-    @media (max-width: 600px) {
-      .modal-content {
-        width: 95%;
-      }
-    }
   </style>
 </head>
 <body>
@@ -134,22 +112,16 @@
   </div>
 
   <script type="module">
-    import "@line/liff";
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-    // ========================
     // Supabase設定
-    // ========================
     const SUPABASE_URL = "https://axeoezwxjjnghtyfmjnz.supabase.co";
     const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4ZW9lend4ampuZ2h0eWZtam56Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4NTE2NjQsImV4cCI6MjA3NjQyNzY2NH0.79UMcuggtqTpbghbXkjtR8g2FYGSTbpasHBd6hcf2Gw";
-
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4ZW9lend4ampuZ2h0eWZtam56Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4NTE2NjQsImV4cCI6MjA3NjQyNzY2NH0.79UMcuggtqTpbghbXkjtR8g2FYGSTbpasHBd6hcf2Gw";
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // ========================
     // LIFF設定
-    // ========================
-    const LIFF_ID = "2008316836-YLR2y1Zj"; // あなたのLIFF ID
+    const LIFF_ID = "2008316836-YLR2y1Zj";
 
     document.addEventListener("DOMContentLoaded", async () => {
       try {
@@ -170,9 +142,6 @@
       }
     });
 
-    // ========================
-    // カレンダー初期化
-    // ========================
     async function initCalendar() {
       const calendarEl = document.getElementById("calendar");
 
@@ -196,9 +165,6 @@
       calendar.render();
     }
 
-    // ========================
-    // モーダル操作
-    // ========================
     async function openModal(event) {
       const modal = document.getElementById("modal");
       const modalTitle = document.getElementById("modalTitle");
@@ -223,7 +189,6 @@
       nameInput.value = window.LINE_NAME || "";
       modal.style.display = "flex";
 
-      // 参加
       document.getElementById("joinBtn").onclick = async () => {
         const { error } = await supabase.from("reservations").insert([
           {
@@ -241,7 +206,6 @@
         }
       };
 
-      // キャンセル
       document.getElementById("cancelBtn").onclick = async () => {
         const { error } = await supabase
           .from("reservations")
@@ -256,7 +220,6 @@
         }
       };
 
-      // 閉じる
       document.getElementById("closeBtn").onclick = () => {
         modal.style.display = "none";
       };
