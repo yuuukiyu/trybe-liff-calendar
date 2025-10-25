@@ -152,14 +152,3 @@ async function openModal(event) {
 
 // LIFFでログイン後のテスト送信
 document.addEventListener("DOMContentLoaded", async () => {
-  await liff.init({ liffId: "2008316836-YLR2y1Zj" });
-
-  // ここでLINEプロフィールを取得
-  const profile = await liff.getProfile();
-  const userId = profile.userId;
-
-  console.log("✅ テスト送信対象 userId:", userId);
-
-  // 自分宛てにテストメッセージ送信
-  await sendLineMessage(userId, "🔔 テスト：通知動作確認");
-});
