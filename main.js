@@ -1,83 +1,39 @@
-// =======================
-// main.js（LINE連携＋通知対応／Vercelサーバーレス版）
-// =======================
-
-import "@line/liff";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-// =======================
-// Supabase設定
-// =======================
+// ===== Supabase設定 =====
 const SUPABASE_URL = "https://axeoezwxjjnghtyfmjnz.supabase.co";
 const SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4ZW9lend4ampuZ2h0eWZtam56Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4NTE2NjQsImV4cCI6MjA3NjQyNzY2NH0.79UMcuggtqTpbghbXkjtR8g2FYGSTbpasHBd6hcf2Gw";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// =======================
-// LIFF設定
-// =======================
-const LIFF_ID = "2008316836-YLR2y1Zj"; // あなたのLIFF ID
+// ===== LIFF設定 =====
+const LIFF_ID = "2008316836-YLR2y1Zj";
 
-// =======================
-// LIFF初期化
-// =======================
 document.addEventListener("DOMContentLoaded", async () => {
   try {
-    console.log("🔸 LIFF初期化開始...");
     await liff.init({ liffId: LIFF_ID });
-    console.log("🔸 LIFF初期化OK");
-
     if (!liff.isLoggedIn()) {
-      console.log("🔸 ログイン未完 → ログイン実行");
       liff.login();
       return;
     }
 
     const profile = await liff.getProfile();
     window.LINE_USER_ID = profile.userId;
-    window.LINE_NAME = profile.displayName;
-
+    window.LINE_NAME   = profile.displayName;
     console.log("✅ LINEログイン:", window.LINE_NAME);
-    console.log("✅ userId:", window.LINE_USER_ID);
 
-    // 🔔 LINEテスト通知
-    await sendServerNotification(window.LINE_USER_ID, "🔔 テスト通知です！");
-
-    // カレンダー表示
-    initCalendar();
-  } catch (error) {
-    console.error("❌ LIFF初期化エラー:", error);
+    await initCalendar();
+  } catch (err) {
+    console.error("LIFF初期化エラー:", err);
   }
 });
 
-// =======================
-// サーバー経由で通知送信（Vercel API）
-// =======================
-async function sendServerNotification(userId, message) {
-  try {
-    const res = await fetch("/api/notify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, message }),
-    });
-
-    const result = await res.json();
-    console.log("📬 通知レスポンス:", result);
-  } catch (err) {
-    console.error("❌ 通知送信エラー:", err);
-  }
-}
-
-// =======================
-// カレンダー初期化
-// =======================
 async function initCalendar() {
   const calendarEl = document.getElementById("calendar");
 
   const { data: events, error } = await supabase.from("calendar_events").select("*");
   if (error) {
-    console.error("イベント取得エラー:", error);
-    alert("イベント取得エラー");
+    alert("イベント取得エラー: " + error.message);
     return;
   }
 
@@ -89,24 +45,40 @@ async function initCalendar() {
       title: e.title,
       start: e.date,
     })),
-    eventClick: async (info) => openModal(info.event),
+    eventClick: (info) => openModal(info.event),
   });
 
   calendar.render();
+
+  // あなたの予約一覧
+  const { data: myReserves } = await supabase
+    .from("reservations")
+    .select("date, status")
+    .eq("user_id", window.LINE_USER_ID)
+    .eq("status", "reserved");
+
+  const list = document.getElementById("mySessionList");
+  list.innerHTML = "";
+
+  if (!myReserves || myReserves.length === 0) {
+    list.innerHTML = "<li>現在予約はありません。</li>";
+  } else {
+    myReserves.forEach((r) => {
+      const li = document.createElement("li");
+      li.textContent = `📅 ${r.date} ｜ 予約中`;
+      list.appendChild(li);
+    });
+  }
 }
 
-// =======================
-// モーダル表示処理
-// =======================
 async function openModal(event) {
-  const modal = document.getElementById("modal");
-  const modalTitle = document.getElementById("modalTitle");
-  const participantList = document.getElementById("participantList");
-  const nameInput = document.getElementById("nameInput");
+  const modal          = document.getElementById("modal");
+  const modalTitle     = document.getElementById("modalTitle");
+  const participantList= document.getElementById("participantList");
+  const nameInput      = document.getElementById("nameInput");
 
   modalTitle.textContent = `${event.title}｜${event.startStr} の参加者`;
 
-  // 参加者一覧取得
   const { data: reservations } = await supabase
     .from("reservations")
     .select("user_name")
@@ -123,7 +95,7 @@ async function openModal(event) {
   nameInput.value = window.LINE_NAME || "";
   modal.style.display = "flex";
 
-  // 参加ボタン
+  // 参加
   document.getElementById("joinBtn").onclick = async () => {
     const { error } = await supabase.from("reservations").insert([
       {
@@ -133,36 +105,32 @@ async function openModal(event) {
         status: "reserved",
       },
     ]);
-
     if (error) {
       alert("登録エラー: " + error.message);
     } else {
-      await sendServerNotification(window.LINE_USER_ID, `✅ ${event.startStr} の予約を受け付けました！`);
       alert("✅ 予約しました！");
       modal.style.display = "none";
       location.reload();
     }
   };
 
-  // キャンセルボタン
+  // キャンセル
   document.getElementById("cancelBtn").onclick = async () => {
     const { error } = await supabase
       .from("reservations")
       .update({ status: "canceled" })
       .eq("user_id", window.LINE_USER_ID)
       .eq("date", event.startStr);
-
     if (error) {
       alert("キャンセルエラー: " + error.message);
     } else {
-      await sendServerNotification(window.LINE_USER_ID, `🚫 ${event.startStr} の予約をキャンセルしました。`);
       alert("🚫 キャンセルしました");
       modal.style.display = "none";
       location.reload();
     }
   };
 
-  // 閉じるボタン
+  // 閉じる
   document.getElementById("closeBtn").onclick = () => {
     modal.style.display = "none";
   };
