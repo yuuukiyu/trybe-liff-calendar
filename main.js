@@ -310,3 +310,4 @@ document.querySelectorAll(".small-delete").forEach((btn) => {
     openDeleteSessionModal(); // 再読み込み
   };
 });
+}
