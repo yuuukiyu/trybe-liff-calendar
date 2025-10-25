@@ -11,6 +11,8 @@ const LIFF_ID = "2008316836-YLR2y1Zj";
 document.addEventListener("DOMContentLoaded", async () => {
   try {
     await liff.init({ liffId: LIFF_ID });
+    await initCalendar();
+await showAdminPanel(); // ← これを追加！
     if (!liff.isLoggedIn()) {
       liff.login();
       return;
@@ -207,4 +209,53 @@ async function openModal(event) {
   document.getElementById("closeBtn").onclick = () => {
     modal.style.display = "none";
   };
+}
+// ===== 管理者専用セッション追加 =====
+
+// 代表者LINE IDリスト
+const ADMIN_LINE_IDS = [
+  "U491a0406fff27c1dfbcf5a9046d11b3a", // 代表者①
+  "U98a9bd633e9362a39fc4da2937d2a89f", // 代表者②
+];
+
+// 管理者パネルを表示する関数
+async function showAdminPanel() {
+  // 現在ログイン中のユーザーが代表者か判定
+  if (ADMIN_LINE_IDS.includes(window.LINE_USER_ID)) {
+    const adminSection = document.getElementById("adminSection");
+    adminSection.style.display = "block";
+
+    const addEventBtn = document.getElementById("addEventBtn");
+    addEventBtn.onclick = async () => {
+      const title = document.getElementById("eventTitle").value.trim();
+      const date = document.getElementById("eventDate").value;
+      const time = document.getElementById("eventTime").value;
+      const place = document.getElementById("eventPlace").value.trim();
+
+      if (!title || !date || !time || !place) {
+        alert("すべての項目を入力してください。");
+        return;
+      }
+
+      const { error } = await supabase.from("events").insert([
+        {
+          title,
+          date,
+          time,
+          place,
+        },
+      ]);
+
+      if (error) {
+        alert("登録エラー: " + error.message);
+      } else {
+        alert("✅ 新しいセッションを追加しました！");
+        location.reload();
+      }
+    };
+  } else {
+    // 非管理者はフォームを完全に非表示
+    const adminSection = document.getElementById("adminSection");
+    if (adminSection) adminSection.style.display = "none";
+  }
 }
