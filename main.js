@@ -8,6 +8,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ===== LIFF設定 =====
 const LIFF_ID = "2008316836-YLR2y1Zj";
 
+// 管理者LINE ID
+const ADMIN_LINE_IDS = [
+  "U491a0406fff27c1dfbcf5a9046d11b3a",
+  "U98a9bd633e9362a39fc4da2937d2a89f",
+];
+
 document.addEventListener("DOMContentLoaded", async () => {
   try {
     await liff.init({ liffId: LIFF_ID });
@@ -23,7 +29,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("✅ LINEログイン:", window.LINE_NAME);
 
     await initCalendar();
-    await showAdminPanel(); // ← 管理者モーダル表示
+
+    // 管理者UI表示
+    if (ADMIN_LINE_IDS.includes(window.LINE_USER_ID)) {
+      document.getElementById("openAdminModalBtn").style.display = "inline-block";
+      setupAdminButtons();
+    }
   } catch (err) {
     console.error("❌ LIFF初期化エラー:", err);
   }
@@ -32,7 +43,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 // ===== カレンダー初期化 =====
 async function initCalendar() {
   const calendarEl = document.getElementById("calendar");
-
   const { data: events, error } = await supabase.from("events").select("*");
   if (error) {
     alert("イベント取得エラー: " + error.message);
@@ -102,7 +112,7 @@ async function loadMySessions(events) {
   }
 }
 
-// ===== モーダル（イベント詳細） =====
+// ===== イベント詳細モーダル =====
 async function openModal(event) {
   const modal = document.getElementById("modal");
   const modalTitle = document.getElementById("modalTitle");
@@ -186,41 +196,43 @@ async function openModal(event) {
     (modal.style.display = "none");
 }
 
-// ===== 管理者専用セッション追加 =====
-async function showAdminPanel() {
-  if (ADMIN_LINE_IDS.includes(window.LINE_USER_ID)) {
-    const adminSection = document.getElementById("adminSection");
-    adminSection.style.display = "block";
+// ===== 管理者用UI =====
+function setupAdminButtons() {
+  // ✅ 「セッション追加」ボタンを押すとモーダル表示
+  const openBtn = document.getElementById("openAdminModalBtn");
+  const adminModal = document.getElementById("adminModal");
+  const closeBtn = document.getElementById("closeAdminModalBtn");
 
-    // ✅ セッション追加ボタンは既存のまま
-    const addEventBtn = document.getElementById("addEventBtn");
-    addEventBtn.onclick = async () => {
-      const title = document.getElementById("eventTitle").value.trim();
-      const date = document.getElementById("eventDate").value;
-      const time = document.getElementById("eventTime").value;
-      const place = document.getElementById("eventPlace").value.trim();
+  openBtn.onclick = () => (adminModal.style.display = "flex");
+  closeBtn.onclick = () => (adminModal.style.display = "none");
 
-      if (!title || !date || !time || !place) {
-        alert("すべての項目を入力してください。");
-        return;
-      }
+  // ✅ 追加処理
+  document.getElementById("addEventBtn").onclick = async () => {
+    const title = document.getElementById("eventTitle").value.trim();
+    const date = document.getElementById("eventDate").value;
+    const time = document.getElementById("eventTime").value;
+    const place = document.getElementById("eventPlace").value.trim();
 
-      const { error } = await supabase.from("events").insert([{ title, date, time, place }]);
-      if (error) {
-        alert("登録エラー: " + error.message);
-      } else {
-        alert("✅ 新しいセッションを追加しました！");
-        location.reload();
-      }
-    };
+    if (!title || !date || !time || !place) {
+      alert("すべての項目を入力してください。");
+      return;
+    }
 
-    // ✅ セッション削除ボタンを追加
-    const deleteBtn = document.createElement("button");
-    deleteBtn.textContent = "🗑 セッション削除";
-    deleteBtn.style.marginTop = "10px";
-    deleteBtn.onclick = openDeleteSessionModal;
-    adminSection.appendChild(deleteBtn);
-  }
+    const { error } = await supabase.from("events").insert([{ title, date, time, place }]);
+    if (error) alert("登録エラー: " + error.message);
+    else {
+      alert("✅ 新しいセッションを追加しました！");
+      adminModal.style.display = "none";
+      location.reload();
+    }
+  };
+
+  // ✅ セッション削除ボタンを追加
+  const deleteBtn = document.createElement("button");
+  deleteBtn.textContent = "🗑 セッション削除";
+  deleteBtn.style.marginTop = "10px";
+  deleteBtn.onclick = openDeleteSessionModal;
+  document.body.insertBefore(deleteBtn, document.getElementById("mySessions"));
 }
 
 // ===== 管理者専用セッション削除 =====
@@ -230,7 +242,6 @@ async function openDeleteSessionModal() {
   modal.style.display = "flex";
   list.innerHTML = "<li>読み込み中...</li>";
 
-  // Supabaseからイベント一覧取得
   const { data: events, error } = await supabase
     .from("events")
     .select("id, title, date, time, place")
@@ -247,7 +258,6 @@ async function openDeleteSessionModal() {
   }
 
   list.innerHTML = "";
-
   events.forEach((e) => {
     const li = document.createElement("li");
     li.innerHTML = `
@@ -257,37 +267,20 @@ async function openDeleteSessionModal() {
     list.appendChild(li);
   });
 
-  // 各削除ボタン処理
   document.querySelectorAll(".small-delete").forEach((btn) => {
     btn.onclick = async () => {
       const eventId = btn.getAttribute("data-id");
-      const confirmDelete = confirm("このセッションを削除しますか？\n予約者データも全て削除されます。");
+      const confirmDelete = confirm("このセッションを削除しますか？予約者データも全て削除されます。");
       if (!confirmDelete) return;
 
-      // reservationsも削除
-      const { error: resErr } = await supabase
-        .from("reservations")
-        .delete()
-        .eq("event_id", eventId);
+      await supabase.from("reservations").delete().eq("event_id", eventId);
+      await supabase.from("events").delete().eq("id", eventId);
 
-      // イベント削除
-      const { error: evErr } = await supabase
-        .from("events")
-        .delete()
-        .eq("id", eventId);
-
-      if (resErr || evErr) {
-        alert("削除エラー: " + (resErr?.message || evErr?.message));
-      } else {
-        alert("🗑 セッションを削除しました！");
-        openDeleteSessionModal(); // 再読み込み
-      }
+      alert("🗑 セッションを削除しました！");
+      openDeleteSessionModal();
     };
   });
 
-  // 閉じる
-  document.getElementById("closeDeleteModal").onclick = () => {
-    modal.style.display = "none";
-  };
+  document.getElementById("closeDeleteModal").onclick = () =>
+    (modal.style.display = "none");
 }
-
