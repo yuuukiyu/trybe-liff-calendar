@@ -23,20 +23,29 @@ const LIFF_ID = "2008316836-YLR2y1Zj"; // あなたのLIFF ID
 // =======================
 document.addEventListener("DOMContentLoaded", async () => {
   try {
+    console.log("🔸 LIFF初期化開始...");
     await liff.init({ liffId: LIFF_ID });
+    console.log("🔸 LIFF初期化OK");
+
     if (!liff.isLoggedIn()) {
+      console.log("🔸 ログイン未完 → ログイン処理へ");
       liff.login();
       return;
     }
 
-const profile = await liff.getProfile();
-console.log("✅ userId:", profile.userId);
-console.log("✅ displayName:", profile.displayName);
-await sendLineMessage(profile.userId, "🔔 テスト通知です！");
+    console.log("🔸 ログイン済み → プロフィール取得中...");
+    const profile = await liff.getProfile();
+    console.log("✅ LINEログイン:", profile.displayName);
+    console.log("✅ userId:", profile.userId);
+
+    // テスト通知送信
+    console.log("📨 sendLineMessage開始...");
+    await sendLineMessage(profile.userId, "🔔 テスト通知です！");
+    console.log("✅ 通知送信完了");
 
     initCalendar();
   } catch (error) {
-    console.error("LIFF初期化エラー:", error);
+    console.error("❌ LIFF初期化エラー:", error);
   }
 });
 
