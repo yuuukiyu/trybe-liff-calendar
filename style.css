@@ -125,3 +125,15 @@ input {
   h1 { font-size: 22px; }
   #mySessions { font-size: 13px; }
 }
+.small-delete {
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 4px 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.small-delete:hover {
+  opacity: 0.85;
+}
