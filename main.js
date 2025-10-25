@@ -1,16 +1,16 @@
 // =======================
-// main.js（LINE連携＋通知版）
+// main.js（LINE連携＋通知対応／Vercelサーバーレス版）
 // =======================
 
 import "@line/liff";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-import { sendLineMessage } from "./notify.js"; // 🔹 同階層に notify.js を配置
 
 // =======================
 // Supabase設定
 // =======================
 const SUPABASE_URL = "https://axeoezwxjjnghtyfmjnz.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4ZW9lend4ampuZ2h0eWZtam56Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4NTE2NjQsImV4cCI6MjA3NjQyNzY2NH0.79UMcuggtqTpbghbXkjtR8g2FYGSTbpasHBd6hcf2Gw";
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4ZW9lend4ampuZ2h0eWZtam56Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4NTE2NjQsImV4cCI6MjA3NjQyNzY2NH0.79UMcuggtqTpbghbXkjtR8g2FYGSTbpasHBd6hcf2Gw";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // =======================
@@ -28,26 +28,45 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("🔸 LIFF初期化OK");
 
     if (!liff.isLoggedIn()) {
-      console.log("🔸 ログイン未完 → ログイン処理へ");
+      console.log("🔸 ログイン未完 → ログイン実行");
       liff.login();
       return;
     }
 
-    console.log("🔸 ログイン済み → プロフィール取得中...");
     const profile = await liff.getProfile();
-    console.log("✅ LINEログイン:", profile.displayName);
-    console.log("✅ userId:", profile.userId);
+    window.LINE_USER_ID = profile.userId;
+    window.LINE_NAME = profile.displayName;
 
-    // テスト通知送信
-    console.log("📨 sendLineMessage開始...");
-    await sendLineMessage(profile.userId, "🔔 テスト通知です！");
-    console.log("✅ 通知送信完了");
+    console.log("✅ LINEログイン:", window.LINE_NAME);
+    console.log("✅ userId:", window.LINE_USER_ID);
 
+    // 🔔 LINEテスト通知
+    await sendServerNotification(window.LINE_USER_ID, "🔔 テスト通知です！");
+
+    // カレンダー表示
     initCalendar();
   } catch (error) {
     console.error("❌ LIFF初期化エラー:", error);
   }
 });
+
+// =======================
+// サーバー経由で通知送信（Vercel API）
+// =======================
+async function sendServerNotification(userId, message) {
+  try {
+    const res = await fetch("/api/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, message }),
+    });
+
+    const result = await res.json();
+    console.log("📬 通知レスポンス:", result);
+  } catch (err) {
+    console.error("❌ 通知送信エラー:", err);
+  }
+}
 
 // =======================
 // カレンダー初期化
@@ -118,12 +137,7 @@ async function openModal(event) {
     if (error) {
       alert("登録エラー: " + error.message);
     } else {
-      // 🔹 LINE本人に通知
-      await sendLineMessage(
-        window.LINE_USER_ID,
-        `✅ ${event.startStr} の予約を受け付けました！`
-      );
-
+      await sendServerNotification(window.LINE_USER_ID, `✅ ${event.startStr} の予約を受け付けました！`);
       alert("✅ 予約しました！");
       modal.style.display = "none";
       location.reload();
@@ -141,12 +155,7 @@ async function openModal(event) {
     if (error) {
       alert("キャンセルエラー: " + error.message);
     } else {
-      // 🔹 LINE本人に通知
-      await sendLineMessage(
-        window.LINE_USER_ID,
-        `🚫 ${event.startStr} の予約をキャンセルしました。`
-      );
-
+      await sendServerNotification(window.LINE_USER_ID, `🚫 ${event.startStr} の予約をキャンセルしました。`);
       alert("🚫 キャンセルしました");
       modal.style.display = "none";
       location.reload();
@@ -158,6 +167,3 @@ async function openModal(event) {
     modal.style.display = "none";
   };
 }
-
-
-
