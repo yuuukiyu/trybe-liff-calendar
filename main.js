@@ -267,47 +267,52 @@ async function openDeleteSessionModal() {
     list.appendChild(li);
   });
 
-document.querySelectorAll(".small-delete").forEach((btn) => {
-  btn.onclick = async () => {
-    const eventId = btn.getAttribute("data-id");
-    const confirmDelete = confirm(
-      "このセッションを削除しますか？\n予約者データも全て削除されます。"
-    );
-    if (!confirmDelete) return;
+  // ===== 各削除ボタン処理 =====
+  document.querySelectorAll(".small-delete").forEach((btn) => {
+    btn.onclick = async () => {
+      const eventId = btn.getAttribute("data-id");
+      const confirmDelete = confirm(
+        "このセッションを削除しますか？\n予約者データも全て削除されます。"
+      );
+      if (!confirmDelete) return;
 
-    console.log("🗑 削除開始: event_id =", eventId);
+      console.log("🗑 削除開始: event_id =", eventId);
 
-    // === reservations 削除 ===
-    const { data: delRes, error: resErr, count: resCount } = await supabase
-      .from("reservations")
-      .delete({ count: "exact" })
-      .eq("event_id", eventId)
-      .select();
+      // === reservations 削除 ===
+      const { error: resErr } = await supabase
+        .from("reservations")
+        .delete()
+        .eq("event_id", Number(eventId)); // 数値変換！
 
-    if (resErr) {
-      console.error("予約削除エラー:", resErr.message);
-      alert("❌ 予約削除に失敗: " + resErr.message);
-      return;
-    }
+      if (resErr) {
+        console.error("予約削除エラー:", resErr.message);
+        alert("❌ 予約削除に失敗: " + resErr.message);
+        return;
+      }
 
-    console.log(`✅ 予約データ削除完了 (${delRes?.length || 0}件)`);
+      // === events 削除 ===
+      const { error: evErr } = await supabase
+        .from("events")
+        .delete()
+        .eq("id", Number(eventId)); // 数値変換！
 
-    // === events 削除 ===
-    const { data: delEvent, error: evErr } = await supabase
-      .from("events")
-      .delete()
-      .eq("id", eventId)
-      .select();
+      if (evErr) {
+        console.error("イベント削除エラー:", evErr.message);
+        alert("❌ セッション削除に失敗: " + evErr.message);
+        return;
+      }
 
-    if (evErr) {
-      console.error("イベント削除エラー:", evErr.message);
-      alert("❌ セッション削除に失敗: " + evErr.message);
-      return;
-    }
+      alert("🗑 セッションを削除しました！");
+      location.reload();
+    };
+  });
 
-    console.log("✅ イベント削除成功:", delEvent);
-    alert("🗑 セッションを削除しました！");
-    openDeleteSessionModal(); // 再読み込み
-  };
-});
+  // ===== 閉じるボタン =====
+  const closeDeleteBtn = document.getElementById("closeDeleteModal");
+  if (closeDeleteBtn) {
+    closeDeleteBtn.onclick = () => {
+      modal.style.display = "none";
+    };
+  }
 }
+
