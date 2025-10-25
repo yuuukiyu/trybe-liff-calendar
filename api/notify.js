@@ -1,27 +1,36 @@
-// api/notify.js
-export default async function handler(req, res) {
-  const { userName, action } = req.query;
-
-  const message =
-    action === "cancel"
-      ? `🚫 ${userName}さんが予約をキャンセルしました`
-      : `✅ ${userName}さんが予約しました！`;
+// notify.js
+export async function sendLineMessage(userId, message) {
+  // ← Messaging APIの「チャネルアクセストークン（長期）」を貼る
+  const CHANNEL_ACCESS_TOKEN =
+    "M9DY7der18lLq4mJ0X+ZKSHsKDbD8lRz9XtsQJQ5gdw+ECk1PdDvqEKohkCaSTptStCAL6GPiRVH2DIe+4PoRxP2CRG54dVMPuBj+Pzl1uzlGCgHd6jdWDPlgLnv4mpGFDot3f71YOGc8CouDQ/WnwdB04t89/1O/w1cDnyilFU=";
 
   try {
-    await fetch("https://api.line.me/v2/bot/message/broadcast", {
+    const body = {
+      to: userId, // ← 自分のLINEユーザーID（LIFFで取得）
+      messages: [
+        {
+          type: "text",
+          text: message,
+        },
+      ],
+    };
+
+    const res = await fetch("https://api.line.me/v2/bot/message/push", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.LINE_CHANNEL_TOKEN}`,
+        Authorization: `Bearer ${CHANNEL_ACCESS_TOKEN}`,
       },
-      body: JSON.stringify({
-        messages: [{ type: "text", text: message }],
-      }),
+      body: JSON.stringify(body),
     });
 
-    res.status(200).json({ success: true });
-  } catch (error) {
-    console.error("LINE通知エラー:", error);
-    res.status(500).json({ error: "LINE通知に失敗しました" });
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error("LINE APIエラー:", errText);
+    } else {
+      console.log("✅ 通知送信成功:", message);
+    }
+  } catch (err) {
+    console.error("通知送信失敗:", err);
   }
 }
