@@ -1,27 +1,127 @@
-/* =========================
-   🌟 Base layout
-========================= */
+/* ===== 共通設定 ===== */
 body {
   font-family: "Noto Sans JP", sans-serif;
   margin: 0;
   background: #f9f9f9;
   text-align: center;
-  color: #333;
 }
 
-/* タイトル（スマホでも1行維持） */
+/* タイトル */
 h1 {
   margin: 20px 0 10px;
   font-size: 28px;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-/* =========================
-   🧾 あなたの予約セッション
-========================= */
+/* ===== あなたの予約セッション ===== */
 #mySessions {
   max-width: 900px;
   margin: 0 auto 15px;
   background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 14px;
+}
+
+/* カレンダー */
+#calendar {
+  max-width: 900px;
+  margin: 0 auto 40px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+/* =========================
+   🎯 モーダル（中央固定）
+========================= */
+.modal {
+  display: none;                /* 初期は非表示 */
+  position: fixed;              /* 画面に固定 */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9999;                /* FullCalendarより上 */
+  justify-content: center;
+  align-items: center;
+}
+
+/* モーダル内のボックス */
+.modal-content {
+  background: #fff;
+  border-radius: 12px;
+  padding: 25px;
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+  animation: fadeIn 0.3s ease;
+}
+
+/* ふわっと出る */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== ボタン類 ===== */
+.btn-row {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+button {
+  border: none;
+  border-radius: 6px;
+  padding: 10px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+button:hover { opacity: 0.85; }
+
+#joinBtn { background: #007bff; color: #fff; }
+#cancelBtn { background: #dc3545; color: #fff; }
+#closeBtn, #closeAdminModalBtn { background: #6c757d; color: #fff; }
+#addEventBtn { background: #28a745; color: #fff; }
+
+/* ===== 入力フォーム ===== */
+input {
+  width: 80%;
+  padding: 8px;
+  margin-top: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+/* ===== 参加者リスト ===== */
+#participantList p {
+  font-weight: 600;
+  text-align: left;
+  margin: 0;
+  padding: 6px 0;
+  border-bottom: 1px solid #ddd;
+}
+
+#participantList li {
+  background: #f9f9f9;
+  padding: 6px 10px;
+  margin-top: 5px;
+  border-radius: 6px;
+}
+
+/* ===== Mobile ===== */
+@media (max-width: 480px) {
+  h1 { font-size: 22px; }
+  #mySessions { font-size: 13px; }
+}
