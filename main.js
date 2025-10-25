@@ -114,6 +114,8 @@ async function openModal(event) {
   const modalTitle = document.getElementById("modalTitle");
   const participantList = document.getElementById("participantList");
   const nameInput = document.getElementById("nameInput");
+  const joinBtn = document.getElementById("joinBtn");
+  const cancelBtn = document.getElementById("cancelBtn");
 
   const { title, extendedProps } = event;
   const { time, place } = extendedProps;
@@ -121,9 +123,10 @@ async function openModal(event) {
   modalTitle.textContent = `${title}｜${event.startStr}`;
   participantList.innerHTML = "";
 
+  // ✅ このイベントの予約者リストを取得
   const { data: reservations, error } = await supabase
     .from("reservations")
-    .select("user_name")
+    .select("user_id, user_name, status")
     .eq("date", event.startStr)
     .eq("status", "reserved");
 
@@ -133,12 +136,14 @@ async function openModal(event) {
     return;
   }
 
+  // ✅ 参加者数を表示
   const count = reservations?.length || 0;
   const header = document.createElement("p");
   header.innerHTML = `👥 参加者 <strong>${count}人</strong>`;
   header.style.marginBottom = "10px";
   participantList.appendChild(header);
 
+  // ✅ 参加者一覧
   reservations?.forEach((r) => {
     const li = document.createElement("li");
     li.textContent = r.user_name;
@@ -148,7 +153,22 @@ async function openModal(event) {
   nameInput.value = window.LINE_NAME || "";
   modal.style.display = "flex";
 
-  document.getElementById("joinBtn").onclick = async () => {
+  // ✅ このユーザーがすでに予約済みかチェック
+  const userReserved = reservations.some(
+    (r) => r.user_id === window.LINE_USER_ID
+  );
+
+  // ✅ ボタン表示を切り替え
+  if (userReserved) {
+    joinBtn.style.display = "none";
+    cancelBtn.style.display = "inline-block";
+  } else {
+    joinBtn.style.display = "inline-block";
+    cancelBtn.style.display = "none";
+  }
+
+  // ===== 予約ボタン =====
+  joinBtn.onclick = async () => {
     const { error } = await supabase.from("reservations").insert([
       {
         user_id: window.LINE_USER_ID,
@@ -158,6 +178,7 @@ async function openModal(event) {
         status: "reserved",
       },
     ]);
+
     if (error) alert("登録エラー: " + error.message);
     else {
       alert("✅ 予約しました！");
@@ -166,7 +187,8 @@ async function openModal(event) {
     }
   };
 
-  document.getElementById("cancelBtn").onclick = async () => {
+  // ===== キャンセルボタン =====
+  cancelBtn.onclick = async () => {
     const { error } = await supabase
       .from("reservations")
       .update({ status: "canceled" })
@@ -181,6 +203,7 @@ async function openModal(event) {
     }
   };
 
+  // 閉じるボタン
   document.getElementById("closeBtn").onclick = () => {
     modal.style.display = "none";
   };
