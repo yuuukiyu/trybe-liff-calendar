@@ -29,10 +29,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    const profile = await liff.getProfile();
-    window.LINE_USER_ID = profile.userId;
-    window.LINE_NAME = profile.displayName;
-    console.log("✅ LINEログイン完了:", profile.displayName);
+const profile = await liff.getProfile();
+console.log("✅ userId:", profile.userId);
+console.log("✅ displayName:", profile.displayName);
+await sendLineMessage(profile.userId, "🔔 テスト通知です！");
 
     initCalendar();
   } catch (error) {
@@ -150,8 +150,5 @@ async function openModal(event) {
   };
 }
 
-const profile = await liff.getProfile();
-console.log("✅ userId:", profile.userId);
-console.log("✅ displayName:", profile.displayName);
-await sendLineMessage(profile.userId, "🔔 テスト通知です！");
+
 
