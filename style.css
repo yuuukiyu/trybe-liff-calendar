@@ -105,3 +105,17 @@ ul li {
   h1 { font-size: 22px; white-space: nowrap; }
   #mySessions { font-size: 13px; }
 }
+#participantList p {
+  font-weight: 600;
+  text-align: left;
+  margin: 0;
+  padding: 6px 0;
+  border-bottom: 1px solid #ddd;
+}
+
+#participantList li {
+  background: #f9f9f9;
+  padding: 6px 10px;
+  margin-top: 5px;
+  border-radius: 6px;
+}
