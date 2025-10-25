@@ -282,7 +282,7 @@ async function openDeleteSessionModal() {
       const { error: resErr } = await supabase
         .from("reservations")
         .delete()
-        .eq("event_id", Number(eventId)); // 数値変換！
+        .eq("event_id", eventId); // ← 文字列のままOK！
 
       if (resErr) {
         console.error("予約削除エラー:", resErr.message);
@@ -294,7 +294,7 @@ async function openDeleteSessionModal() {
       const { error: evErr } = await supabase
         .from("events")
         .delete()
-        .eq("id", Number(eventId)); // 数値変換！
+        .eq("id", eventId); // ← 文字列のままOK！
 
       if (evErr) {
         console.error("イベント削除エラー:", evErr.message);
@@ -315,4 +315,3 @@ async function openDeleteSessionModal() {
     };
   }
 }
-
