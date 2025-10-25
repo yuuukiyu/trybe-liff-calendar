@@ -12,21 +12,30 @@
   <!-- LIFF SDK -->
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
-  <!-- app style -->
+  <!-- CSS -->
   <link rel="stylesheet" href="./style.css" />
 </head>
 
 <body>
-  <h1 id="calendarTitle">🏃 TRYBE予約カレンダー</h1>
-<!-- 管理者専用：セッション追加フォーム -->
-<div id="adminSection" style="display:none; margin: 20px 0;">
-  <h3>📅 新しいセッションを追加</h3>
-  <input id="eventTitle" placeholder="タイトル (例: TRYBE朝ラン)" />
-  <input id="eventDate" type="date" />
-  <input id="eventTime" type="time" />
-  <input id="eventPlace" placeholder="場所 (例: 大磯海岸)" />
-  <button id="addEventBtn">＋ セッション追加</button>
-</div>
+  <h1>🏃 TRYBE予約カレンダー</h1>
+
+  <!-- 管理者専用：セッション追加ボタン -->
+  <button id="openAdminModalBtn" style="display:none; margin:15px;">＋ セッション追加</button>
+
+  <!-- 管理者モーダル -->
+  <div id="adminModal" class="modal">
+    <div class="modal-content">
+      <h3>📅 新しいセッションを追加</h3>
+      <input id="eventTitle" placeholder="タイトル (例: TRYBE朝ラン)" />
+      <input id="eventDate" type="date" />
+      <input id="eventTime" type="time" />
+      <input id="eventPlace" placeholder="場所 (例: 大磯海岸)" />
+      <div class="btn-row">
+        <button id="addEventBtn">追加</button>
+        <button id="closeAdminModalBtn" class="close">閉じる</button>
+      </div>
+    </div>
+  </div>
 
   <!-- あなたの予約セッション -->
   <div id="mySessions">
@@ -53,7 +62,7 @@
     </div>
   </div>
 
-  <!-- app script -->
+  <!-- JS -->
   <script type="module" src="./main.js"></script>
 </body>
 </html>
