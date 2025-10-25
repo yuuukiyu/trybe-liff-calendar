@@ -1,19 +1,26 @@
 // =======================
-// main.js（LINE連携版）
+// main.js（LINE連携＋通知版）
 // =======================
 
 import "@line/liff";
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+import { sendLineMessage } from "./notify.js"; // 🔹 同階層に notify.js を配置
 
+// =======================
 // Supabase設定
+// =======================
 const SUPABASE_URL = "https://axeoezwxjjnghtyfmjnz.supabase.co";
 const SUPABASE_ANON_KEY = "あなたのanonキー";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// =======================
 // LIFF設定
+// =======================
 const LIFF_ID = "2008316836-YLR2y1Zj"; // あなたのLIFF ID
 
-// 初期化
+// =======================
+// LIFF初期化
+// =======================
 document.addEventListener("DOMContentLoaded", async () => {
   try {
     await liff.init({ liffId: LIFF_ID });
@@ -27,7 +34,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.LINE_NAME = profile.displayName;
     console.log("✅ LINEログイン完了:", profile.displayName);
 
-    initCalendar(); // LIFF初期化後にカレンダー描画
+    initCalendar();
   } catch (error) {
     console.error("LIFF初期化エラー:", error);
   }
@@ -61,7 +68,7 @@ async function initCalendar() {
 }
 
 // =======================
-// モーダル表示
+// モーダル表示処理
 // =======================
 async function openModal(event) {
   const modal = document.getElementById("modal");
@@ -86,7 +93,6 @@ async function openModal(event) {
   });
 
   nameInput.value = window.LINE_NAME || "";
-
   modal.style.display = "flex";
 
   // 参加ボタン
@@ -99,8 +105,16 @@ async function openModal(event) {
         status: "reserved",
       },
     ]);
-    if (error) alert("登録エラー: " + error.message);
-    else {
+
+    if (error) {
+      alert("登録エラー: " + error.message);
+    } else {
+      // 🔹 LINE本人に通知
+      await sendLineMessage(
+        window.LINE_USER_ID,
+        `✅ ${event.startStr} の予約を受け付けました！`
+      );
+
       alert("✅ 予約しました！");
       modal.style.display = "none";
       location.reload();
@@ -114,8 +128,16 @@ async function openModal(event) {
       .update({ status: "canceled" })
       .eq("user_id", window.LINE_USER_ID)
       .eq("date", event.startStr);
-    if (error) alert("キャンセルエラー: " + error.message);
-    else {
+
+    if (error) {
+      alert("キャンセルエラー: " + error.message);
+    } else {
+      // 🔹 LINE本人に通知
+      await sendLineMessage(
+        window.LINE_USER_ID,
+        `🚫 ${event.startStr} の予約をキャンセルしました。`
+      );
+
       alert("🚫 キャンセルしました");
       modal.style.display = "none";
       location.reload();
@@ -127,6 +149,3 @@ async function openModal(event) {
     modal.style.display = "none";
   };
 }
-
-await fetch(`/api/notify?userName=${window.LINE_NAME}&action=reserve`);
-await fetch(`/api/notify?userName=${window.LINE_NAME}&action=cancel`);
