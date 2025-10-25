@@ -150,5 +150,11 @@ async function openModal(event) {
   };
 }
 
-// LIFFでログイン後のテスト送信
 document.addEventListener("DOMContentLoaded", async () => {
+  await liff.init({ liffId: "2008316836-YLR2y1Zj" });
+  const profile = await liff.getProfile();
+  console.log("✅ userId:", profile.userId);
+
+  await sendLineMessage(profile.userId, "🔔 テスト通知です！");
+});
+
