@@ -3,7 +3,7 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 // ===== Supabase設定 =====
 const SUPABASE_URL = "https://axeoezwxjjnghtyfmjnz.supabase.co";
 const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4ZW9lend4ampuZ2h0eWZtam56Iiwicm9zZSI6ImFub24iLCJpYXQiOjE3NjA4NTE2NjQsImV4cCI6MjA3NjQyNzY2NH0.79UMcuggtqTpbghbXkjtR8g2FYGSTbpasHBd6hcf2Gw";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4ZW9lend4ampuZ2h0eWZtam56Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4NTE2NjQsImV4cCI6MjA3NjQyNzY2NH0.79UMcuggtqTpbghbXkjtR8g2FYGSTbpasHBd6hcf2Gw";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ===== LIFF設定 =====
@@ -116,14 +116,17 @@ async function openModal(event) {
 
   // 参加ボタン
   document.getElementById("joinBtn").onclick = async () => {
-    const { error } = await supabase.from("reservations").insert([
-      {
-        user_id: window.LINE_USER_ID,
-        user_name: window.LINE_NAME,
-        date: event.startStr,
-        status: "reserved",
-      },
-    ]);
+// イベントIDを追加
+const { error } = await supabase.from("reservations").insert([
+  {
+    user_id: window.LINE_USER_ID,
+    user_name: window.LINE_NAME,
+    date: event.startStr,
+    event_id: event.id, // ✅ この行を追加
+    status: "reserved",
+  },
+]);
+
     if (error) alert("登録エラー: " + error.message);
     else {
       alert("✅ 予約しました！");
