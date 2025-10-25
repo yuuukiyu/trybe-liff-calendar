@@ -52,6 +52,56 @@ async function initCalendar() {
   });
 
   calendar.render();
+// ===== あなたの予約セッション一覧を表示 =====
+async function loadMySessions(events) {
+  const list = document.getElementById("mySessionList");
+  list.innerHTML = "<li>読み込み中...</li>";
+
+  const { data: reservations, error: resError } = await supabase
+    .from("reservations")
+    .select("date, status")
+    .eq("user_id", window.LINE_USER_ID)
+    .eq("status", "reserved");
+
+  if (resError) {
+    console.error("予約一覧取得エラー:", resError.message);
+    list.innerHTML = "<li>読み込み失敗しました。</li>";
+    return;
+  }
+
+  list.innerHTML = "";
+  if (!reservations || reservations.length === 0) {
+    list.innerHTML = "<li>現在予約はありません。</li>";
+    return;
+  }
+
+  // 日付順に並べ替え
+  reservations.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  // 各予約ごとにイベント情報＋人数を取得
+  for (const r of reservations) {
+    const event = events.find((e) => e.date === r.date);
+    const title = event?.title || "（不明なイベント）";
+    const time = event?.time || "";
+    const place = event?.place || "";
+
+    // 参加者数取得
+    const { count } = await supabase
+      .from("reservations")
+      .select("*", { count: "exact", head: true })
+      .eq("date", r.date)
+      .eq("status", "reserved");
+
+    // HTML整形
+    const li = document.createElement("li");
+    li.innerHTML = `
+      📅 ${r.date} ${time}｜${title}（${place}）<br>
+      👥 参加者：${count || 0}人
+    `;
+    li.style.marginBottom = "12px";
+    list.appendChild(li);
+  }
+}
 
   // あなたの予約セッション一覧
   const list = document.getElementById("mySessionList");
