@@ -11,19 +11,22 @@ const LIFF_ID = "2008316836-YLR2y1Zj";
 document.addEventListener("DOMContentLoaded", async () => {
   try {
     await liff.init({ liffId: LIFF_ID });
-    await initCalendar();
-await showAdminPanel(); // ← これを追加！
+
+    // ✅ まずログインしていなければログイン
     if (!liff.isLoggedIn()) {
       liff.login();
       return;
     }
 
+    // ✅ ログイン済みならプロフィール取得
     const profile = await liff.getProfile();
     window.LINE_USER_ID = profile.userId;
     window.LINE_NAME = profile.displayName;
     console.log("✅ LINEログイン:", window.LINE_NAME);
 
+    // ✅ カレンダーと管理パネルを初期化（順序重要！）
     await initCalendar();
+    await showAdminPanel();
   } catch (err) {
     console.error("❌ LIFF初期化エラー:", err);
   }
