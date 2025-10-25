@@ -3,7 +3,7 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 // ===== Supabase設定 =====
 const SUPABASE_URL = "https://axeoezwxjjnghtyfmjnz.supabase.co";
 const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4ZW9lend4ampuZ2h0eWZtam56Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4NTE2NjQsImV4cCI6MjA3NjQyNzY2NH0.79UMcuggtqTpbghbXkjtR8g2FYGSTbpasHBd6hcf2Gw";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4ZW9lend4ampuZ2h0eWZtam56Iiwicm9zZSI6ImFub24iLCJpYXQiOjE3NjA4NTE2NjQsImV4cCI6MjA3NjQyNzY2NH0.79UMcuggtqTpbghbXkjtR8g2FYGSTbpasHBd6hcf2Gw";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ===== LIFF設定 =====
@@ -50,10 +50,10 @@ async function initCalendar() {
 
   calendar.render();
 
-  // あなたの予約一覧
+  // ✅ あなたの予約一覧を表示（タイトル付き）
   const { data: myReserves } = await supabase
     .from("reservations")
-    .select("date, status")
+    .select("date, title, status") // ← titleを取得
     .eq("user_id", window.LINE_USER_ID)
     .eq("status", "reserved");
 
@@ -63,9 +63,11 @@ async function initCalendar() {
   if (!myReserves || myReserves.length === 0) {
     list.innerHTML = "<li>現在予約はありません。</li>";
   } else {
+    // 日付昇順で並べ替え
+    myReserves.sort((a, b) => new Date(a.date) - new Date(b.date));
     myReserves.forEach((r) => {
       const li = document.createElement("li");
-      li.textContent = `📅 ${r.date} ｜ 予約中`;
+      li.textContent = `📅 ${r.date} ｜ ${r.title ?? "（セッション名なし）"} ｜ 予約中`;
       list.appendChild(li);
     });
   }
@@ -102,6 +104,7 @@ async function openModal(event) {
         user_id: window.LINE_USER_ID,
         user_name: window.LINE_NAME,
         date: event.startStr,
+        title: event.title, // ✅ 追加：セッション名を保存
         status: "reserved",
       },
     ]);
