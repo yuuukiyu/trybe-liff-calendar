@@ -103,7 +103,8 @@ async function loadMySessions(events) {
   }
 }
 
-  // あなたの予約セッション一覧
+ // ===== あなたの予約セッション一覧を表示 =====
+async function loadMySessions(events) {
   const list = document.getElementById("mySessionList");
   list.innerHTML = "<li>読み込み中...</li>";
 
@@ -122,17 +123,36 @@ async function loadMySessions(events) {
   list.innerHTML = "";
   if (!reservations || reservations.length === 0) {
     list.innerHTML = "<li>現在予約はありません。</li>";
-  } else {
-    reservations.sort((a, b) => new Date(a.date) - new Date(b.date));
-    for (const r of reservations) {
-      const event = events.find((e) => e.date === r.date);
-      const title = event?.title || "（不明なイベント）";
-      const time = event?.time || "";
-      const place = event?.place || "";
-      const li = document.createElement("li");
-      li.textContent = `📅 ${r.date} ${time}｜${title}（${place}）`;
-      list.appendChild(li);
-    }
+    return;
+  }
+
+  reservations.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  for (const r of reservations) {
+    const event = events.find((e) => e.date === r.date);
+    const title = event?.title || "（不明なイベント）";
+    const time = event?.time || "";
+    const place = event?.place || "";
+
+    // ✅ 日付を YYYY-MM-DD 形式に整形
+    const dateOnly = new Date(r.date).toISOString().split("T")[0];
+
+    // ✅ 同じ日付の参加人数をカウント
+    const { count, error: countError } = await supabase
+      .from("reservations")
+      .select("*", { count: "exact", head: true })
+      .eq("date", dateOnly)
+      .eq("status", "reserved");
+
+    if (countError) console.error("人数取得エラー:", countError.message);
+
+    const li = document.createElement("li");
+    li.innerHTML = `
+      📅 ${r.date} ${time}｜${title}（${place}）<br>
+      👥 参加者：${count || 0}人
+    `;
+    li.style.marginBottom = "12px";
+    list.appendChild(li);
   }
 }
 
