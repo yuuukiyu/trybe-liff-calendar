@@ -186,50 +186,108 @@ async function openModal(event) {
     (modal.style.display = "none");
 }
 
-// ===== 管理者モーダル =====
+// ===== 管理者専用セッション追加 =====
 async function showAdminPanel() {
-  const ADMIN_LINE_IDS = [
-    "U491a0406fff27c1dfbcf5a9046d11b3a",
-    "U98a9bd633e9362a39fc4da2937d2a89f",
-  ];
+  if (ADMIN_LINE_IDS.includes(window.LINE_USER_ID)) {
+    const adminSection = document.getElementById("adminSection");
+    adminSection.style.display = "block";
 
-  if (!ADMIN_LINE_IDS.includes(window.LINE_USER_ID)) return;
+    // ✅ セッション追加ボタンは既存のまま
+    const addEventBtn = document.getElementById("addEventBtn");
+    addEventBtn.onclick = async () => {
+      const title = document.getElementById("eventTitle").value.trim();
+      const date = document.getElementById("eventDate").value;
+      const time = document.getElementById("eventTime").value;
+      const place = document.getElementById("eventPlace").value.trim();
 
-  const openBtn = document.getElementById("openAdminModalBtn");
-  const modal = document.getElementById("adminModal");
-  const closeBtn = document.getElementById("closeAdminModalBtn");
-  const addBtn = document.getElementById("addEventBtn");
+      if (!title || !date || !time || !place) {
+        alert("すべての項目を入力してください。");
+        return;
+      }
 
-  openBtn.style.display = "inline-block";
+      const { error } = await supabase.from("events").insert([{ title, date, time, place }]);
+      if (error) {
+        alert("登録エラー: " + error.message);
+      } else {
+        alert("✅ 新しいセッションを追加しました！");
+        location.reload();
+      }
+    };
 
-  openBtn.onclick = () => (modal.style.display = "flex");
-  closeBtn.onclick = () => (modal.style.display = "none");
+    // ✅ セッション削除ボタンを追加
+    const deleteBtn = document.createElement("button");
+    deleteBtn.textContent = "🗑 セッション削除";
+    deleteBtn.style.marginTop = "10px";
+    deleteBtn.onclick = openDeleteSessionModal;
+    adminSection.appendChild(deleteBtn);
+  }
+}
 
-  addBtn.onclick = async () => {
-    const title = document.getElementById("eventTitle").value.trim();
-    const date = document.getElementById("eventDate").value;
-    const time = document.getElementById("eventTime").value;
-    const place = document.getElementById("eventPlace").value.trim();
+// ===== 管理者専用セッション削除 =====
+async function openDeleteSessionModal() {
+  const modal = document.getElementById("deleteSessionModal");
+  const list = document.getElementById("deleteSessionList");
+  modal.style.display = "flex";
+  list.innerHTML = "<li>読み込み中...</li>";
 
-    if (!title || !date || !time || !place) {
-      alert("すべての項目を入力してください。");
-      return;
-    }
+  // Supabaseからイベント一覧取得
+  const { data: events, error } = await supabase
+    .from("events")
+    .select("id, title, date, time, place")
+    .order("date", { ascending: true });
 
-    const { error } = await supabase.from("events").insert([
-      { title, date, time, place },
-    ]);
+  if (error) {
+    list.innerHTML = "<li>取得エラー: " + error.message + "</li>";
+    return;
+  }
 
-    if (error) {
-      alert("登録エラー: " + error.message);
-    } else {
-      alert("✅ 新しいセッションを追加しました！");
-      modal.style.display = "none";
-      location.reload();
-    }
-  };
+  if (!events || events.length === 0) {
+    list.innerHTML = "<li>登録されているセッションはありません。</li>";
+    return;
+  }
 
-  window.onclick = (e) => {
-    if (e.target === modal) modal.style.display = "none";
+  list.innerHTML = "";
+
+  events.forEach((e) => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      📅 ${e.date} ${e.time}｜${e.title}（${e.place}）
+      <button class="small-delete" data-id="${e.id}" style="margin-left:10px;">削除</button>
+    `;
+    list.appendChild(li);
+  });
+
+  // 各削除ボタン処理
+  document.querySelectorAll(".small-delete").forEach((btn) => {
+    btn.onclick = async () => {
+      const eventId = btn.getAttribute("data-id");
+      const confirmDelete = confirm("このセッションを削除しますか？\n予約者データも全て削除されます。");
+      if (!confirmDelete) return;
+
+      // reservationsも削除
+      const { error: resErr } = await supabase
+        .from("reservations")
+        .delete()
+        .eq("event_id", eventId);
+
+      // イベント削除
+      const { error: evErr } = await supabase
+        .from("events")
+        .delete()
+        .eq("id", eventId);
+
+      if (resErr || evErr) {
+        alert("削除エラー: " + (resErr?.message || evErr?.message));
+      } else {
+        alert("🗑 セッションを削除しました！");
+        openDeleteSessionModal(); // 再読み込み
+      }
+    };
+  });
+
+  // 閉じる
+  document.getElementById("closeDeleteModal").onclick = () => {
+    modal.style.display = "none";
   };
 }
+
