@@ -96,15 +96,31 @@ async function openModal(event) {
   const { title, extendedProps } = event;
   const { time, place } = extendedProps;
 
+  // イベント情報タイトル部分
   modalTitle.textContent = `${title}｜${event.startStr}`;
   participantList.innerHTML = "";
 
-  const { data: reservations } = await supabase
+  // Supabaseから予約データ取得
+  const { data: reservations, error } = await supabase
     .from("reservations")
     .select("user_name")
     .eq("date", event.startStr)
     .eq("status", "reserved");
 
+  if (error) {
+    participantList.innerHTML = "<li>参加者の取得に失敗しました。</li>";
+    console.error(error.message);
+    return;
+  }
+
+  // 参加人数
+  const count = reservations?.length || 0;
+  const header = document.createElement("p");
+  header.innerHTML = `👥 参加者 <strong>${count}人</strong>`;
+  header.style.marginBottom = "10px";
+  participantList.appendChild(header);
+
+  // 参加者リストを描画
   reservations?.forEach((r) => {
     const li = document.createElement("li");
     li.textContent = r.user_name;
@@ -116,16 +132,15 @@ async function openModal(event) {
 
   // 参加ボタン
   document.getElementById("joinBtn").onclick = async () => {
-// イベントIDを追加
-const { error } = await supabase.from("reservations").insert([
-  {
-    user_id: window.LINE_USER_ID,
-    user_name: window.LINE_NAME,
-    date: event.startStr,
-    event_id: event.id, // ✅ この行を追加
-    status: "reserved",
-  },
-]);
+    const { error } = await supabase.from("reservations").insert([
+      {
+        user_id: window.LINE_USER_ID,
+        user_name: window.LINE_NAME,
+        date: event.startStr,
+        event_id: event.id,
+        status: "reserved",
+      },
+    ]);
 
     if (error) alert("登録エラー: " + error.message);
     else {
@@ -142,6 +157,7 @@ const { error } = await supabase.from("reservations").insert([
       .update({ status: "canceled" })
       .eq("user_id", window.LINE_USER_ID)
       .eq("date", event.startStr);
+
     if (error) alert("キャンセルエラー: " + error.message);
     else {
       alert("🚫 キャンセルしました");
