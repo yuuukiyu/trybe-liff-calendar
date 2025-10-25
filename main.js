@@ -12,21 +12,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   try {
     await liff.init({ liffId: LIFF_ID });
 
-    // ✅ まずログインしていなければログイン
     if (!liff.isLoggedIn()) {
       liff.login();
       return;
     }
 
-    // ✅ ログイン済みならプロフィール取得
     const profile = await liff.getProfile();
     window.LINE_USER_ID = profile.userId;
     window.LINE_NAME = profile.displayName;
     console.log("✅ LINEログイン:", window.LINE_NAME);
 
-    // ✅ カレンダーと管理パネルを初期化（順序重要！）
     await initCalendar();
-    await showAdminPanel();
+    await showAdminPanel(); // ← 管理者モーダル表示
   } catch (err) {
     console.error("❌ LIFF初期化エラー:", err);
   }
@@ -55,12 +52,10 @@ async function initCalendar() {
   });
 
   calendar.render();
-
-  // ✅ カレンダー描画後に自分の予約セッション読み込み
   await loadMySessions(events);
 }
 
-// ===== あなたの予約セッション一覧を表示 =====
+// ===== あなたの予約セッション一覧 =====
 async function loadMySessions(events) {
   const list = document.getElementById("mySessionList");
   list.innerHTML = "<li>読み込み中...</li>";
@@ -91,17 +86,11 @@ async function loadMySessions(events) {
     const time = event?.time || "";
     const place = event?.place || "";
 
-    // ✅ 日付を YYYY-MM-DD に揃える
-    const dateOnly = new Date(r.date).toISOString().split("T")[0];
-
-    // ✅ 同じ日付の参加人数を取得
-    const { count, error: countError } = await supabase
+    const { count } = await supabase
       .from("reservations")
       .select("*", { count: "exact", head: true })
-      .eq("date", dateOnly)
+      .eq("date", r.date)
       .eq("status", "reserved");
-
-    if (countError) console.error("人数取得エラー:", countError.message);
 
     const li = document.createElement("li");
     li.innerHTML = `
@@ -113,7 +102,7 @@ async function loadMySessions(events) {
   }
 }
 
-// ===== モーダル表示処理 =====
+// ===== モーダル（イベント詳細） =====
 async function openModal(event) {
   const modal = document.getElementById("modal");
   const modalTitle = document.getElementById("modalTitle");
@@ -128,7 +117,6 @@ async function openModal(event) {
   modalTitle.textContent = `${title}｜${event.startStr}`;
   participantList.innerHTML = "";
 
-  // ✅ このイベントの予約者リストを取得
   const { data: reservations, error } = await supabase
     .from("reservations")
     .select("user_id, user_name, status")
@@ -141,14 +129,11 @@ async function openModal(event) {
     return;
   }
 
-  // ✅ 参加者数を表示
   const count = reservations?.length || 0;
   const header = document.createElement("p");
   header.innerHTML = `👥 参加者 <strong>${count}人</strong>`;
-  header.style.marginBottom = "10px";
   participantList.appendChild(header);
 
-  // ✅ 参加者一覧
   reservations?.forEach((r) => {
     const li = document.createElement("li");
     li.textContent = r.user_name;
@@ -158,21 +143,13 @@ async function openModal(event) {
   nameInput.value = window.LINE_NAME || "";
   modal.style.display = "flex";
 
-  // ✅ このユーザーがすでに予約済みかチェック
   const userReserved = reservations.some(
     (r) => r.user_id === window.LINE_USER_ID
   );
 
-  // ✅ ボタン表示を切り替え
-  if (userReserved) {
-    joinBtn.style.display = "none";
-    cancelBtn.style.display = "inline-block";
-  } else {
-    joinBtn.style.display = "inline-block";
-    cancelBtn.style.display = "none";
-  }
+  joinBtn.style.display = userReserved ? "none" : "inline-block";
+  cancelBtn.style.display = userReserved ? "inline-block" : "none";
 
-  // ===== 予約ボタン =====
   joinBtn.onclick = async () => {
     const { error } = await supabase.from("reservations").insert([
       {
@@ -183,7 +160,6 @@ async function openModal(event) {
         status: "reserved",
       },
     ]);
-
     if (error) alert("登録エラー: " + error.message);
     else {
       alert("✅ 予約しました！");
@@ -192,14 +168,12 @@ async function openModal(event) {
     }
   };
 
-  // ===== キャンセルボタン =====
   cancelBtn.onclick = async () => {
     const { error } = await supabase
       .from("reservations")
       .update({ status: "canceled" })
       .eq("user_id", window.LINE_USER_ID)
       .eq("date", event.startStr);
-
     if (error) alert("キャンセルエラー: " + error.message);
     else {
       alert("🚫 キャンセルしました");
@@ -208,57 +182,54 @@ async function openModal(event) {
     }
   };
 
-  // 閉じるボタン
-  document.getElementById("closeBtn").onclick = () => {
-    modal.style.display = "none";
-  };
+  document.getElementById("closeBtn").onclick = () =>
+    (modal.style.display = "none");
 }
-// ===== 管理者専用セッション追加 =====
 
-// 代表者LINE IDリスト
-const ADMIN_LINE_IDS = [
-  "U491a0406fff27c1dfbcf5a9046d11b3a", // 代表者①
-  "U98a9bd633e9362a39fc4da2937d2a89f", // 代表者②
-];
-
-// 管理者パネルを表示する関数
+// ===== 管理者モーダル =====
 async function showAdminPanel() {
-  // 現在ログイン中のユーザーが代表者か判定
-  if (ADMIN_LINE_IDS.includes(window.LINE_USER_ID)) {
-    const adminSection = document.getElementById("adminSection");
-    adminSection.style.display = "block";
+  const ADMIN_LINE_IDS = [
+    "U491a0406fff27c1dfbcf5a9046d11b3a",
+    "U98a9bd633e9362a39fc4da2937d2a89f",
+  ];
 
-    const addEventBtn = document.getElementById("addEventBtn");
-    addEventBtn.onclick = async () => {
-      const title = document.getElementById("eventTitle").value.trim();
-      const date = document.getElementById("eventDate").value;
-      const time = document.getElementById("eventTime").value;
-      const place = document.getElementById("eventPlace").value.trim();
+  if (!ADMIN_LINE_IDS.includes(window.LINE_USER_ID)) return;
 
-      if (!title || !date || !time || !place) {
-        alert("すべての項目を入力してください。");
-        return;
-      }
+  const openBtn = document.getElementById("openAdminModalBtn");
+  const modal = document.getElementById("adminModal");
+  const closeBtn = document.getElementById("closeAdminModalBtn");
+  const addBtn = document.getElementById("addEventBtn");
 
-      const { error } = await supabase.from("events").insert([
-        {
-          title,
-          date,
-          time,
-          place,
-        },
-      ]);
+  openBtn.style.display = "inline-block";
 
-      if (error) {
-        alert("登録エラー: " + error.message);
-      } else {
-        alert("✅ 新しいセッションを追加しました！");
-        location.reload();
-      }
-    };
-  } else {
-    // 非管理者はフォームを完全に非表示
-    const adminSection = document.getElementById("adminSection");
-    if (adminSection) adminSection.style.display = "none";
-  }
+  openBtn.onclick = () => (modal.style.display = "flex");
+  closeBtn.onclick = () => (modal.style.display = "none");
+
+  addBtn.onclick = async () => {
+    const title = document.getElementById("eventTitle").value.trim();
+    const date = document.getElementById("eventDate").value;
+    const time = document.getElementById("eventTime").value;
+    const place = document.getElementById("eventPlace").value.trim();
+
+    if (!title || !date || !time || !place) {
+      alert("すべての項目を入力してください。");
+      return;
+    }
+
+    const { error } = await supabase.from("events").insert([
+      { title, date, time, place },
+    ]);
+
+    if (error) {
+      alert("登録エラー: " + error.message);
+    } else {
+      alert("✅ 新しいセッションを追加しました！");
+      modal.style.display = "none";
+      location.reload();
+    }
+  };
+
+  window.onclick = (e) => {
+    if (e.target === modal) modal.style.display = "none";
+  };
 }
