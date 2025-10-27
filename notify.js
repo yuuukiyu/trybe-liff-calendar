@@ -4,6 +4,8 @@ export async function sendLineMessage(userId, message) {
     "M9DY7der18lLq4mJ0X+ZKSHsKDbD8lRz9XtsQJQ5gdw+ECk1PdDvqEKohkCaSTptStCAL6GPiRVH2DIe+4PoRxP2CRG54dVMPuBj+Pzl1uzlGCgHd6jdWDPlgLnv4mpGFDot3f71YOGc8CouDQ/WnwdB04t89/1O/w1cDnyilFU=";
 
   try {
+    console.log("✅ notify.js 読み込みOK");
+
     const body = {
       to: userId,
       messages: [{ type: "text", text: message }],
