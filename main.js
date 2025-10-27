@@ -160,43 +160,45 @@ async function openModal(event) {
   joinBtn.style.display = userReserved ? "none" : "inline-block";
   cancelBtn.style.display = userReserved ? "inline-block" : "none";
 
-  joinBtn.onclick = async () => {
-      console.log("🚀 予約処理開始");
-    const { error } = await supabase.from("reservations").insert([
-      {
-        user_id: window.LINE_USER_ID,
-        user_name: window.LINE_NAME,
-        date: event.startStr,
-        event_id: event.id,
-        status: "reserved",
-      },
-    ]);
-    if (error) alert("登録エラー: " + error.message);
-    else {
-      // === 管理者へLINE通知 ===
+joinBtn.onclick = async () => {
+  console.log("🚀 予約処理開始");
 
-for (const adminId of ADMIN_LINE_IDS) {
-           console.log("✅ Supabase登録完了");
-  sendLineMessage(
-          console.log("📤 管理者通知送信:", adminId);
-    adminId,
-    `✅ 新しい予約が入りました！\n\n👤 ${window.LINE_NAME}\n📅 ${event.startStr}\n🕒 ${time}\n📍 ${place}`
-  );
-}
+  const { error } = await supabase.from("reservations").insert([
+    {
+      user_id: window.LINE_USER_ID,
+      user_name: window.LINE_NAME,
+      date: event.startStr,
+      event_id: event.id,
+      status: "reserved",
+    },
+  ]);
 
-// === 予約者本人にも通知 ===
-          console.log("📤 本人通知送信:", window.LINE_USER_ID);
-sendLineMessage(
-  window.LINE_USER_ID,
-  `✅ 予約が完了しました！\n\n📅 ${event.startStr}\n🕒 ${time}\n📍 ${place}`
+  if (error) alert("登録エラー: " + error.message);
+  else {
+    console.log("✅ Supabase登録完了");
 
-);
-
-      alert("✅ 予約しました！");
-      modal.style.display = "none";
-      location.reload();
+    // === 管理者へLINE通知 ===
+    for (const adminId of ADMIN_LINE_IDS) {
+      console.log("📤 管理者通知送信:", adminId);
+      sendLineMessage(
+        adminId,
+        `✅ 新しい予約が入りました！\n👤 ${window.LINE_NAME}\n📅 ${event.startStr}`
+      );
     }
-  };
+
+    // === 予約者本人へ通知 ===
+    console.log("📤 本人通知送信:", window.LINE_USER_ID);
+    sendLineMessage(
+      window.LINE_USER_ID,
+      `✅ 予約完了！\n📅 ${event.startStr}`
+    );
+
+    alert("✅ 予約しました！");
+    modal.style.display = "none";
+    location.reload();
+  }
+};
+
 
   cancelBtn.onclick = async () => {
     const { error } = await supabase
