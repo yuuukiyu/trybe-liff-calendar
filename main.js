@@ -161,6 +161,7 @@ async function openModal(event) {
   cancelBtn.style.display = userReserved ? "inline-block" : "none";
 
   joinBtn.onclick = async () => {
+      console.log("🚀 予約処理開始");
     const { error } = await supabase.from("reservations").insert([
       {
         user_id: window.LINE_USER_ID,
@@ -173,8 +174,10 @@ async function openModal(event) {
     if (error) alert("登録エラー: " + error.message);
     else {
       // === 管理者へLINE通知 ===
+         console.log("✅ Supabase登録完了");
 for (const adminId of ADMIN_LINE_IDS) {
   sendLineMessage(
+          console.log("📤 管理者通知送信:", adminId);
     adminId,
     `✅ 新しい予約が入りました！\n\n👤 ${window.LINE_NAME}\n📅 ${event.startStr}\n🕒 ${time}\n📍 ${place}`
   );
@@ -184,6 +187,7 @@ for (const adminId of ADMIN_LINE_IDS) {
 sendLineMessage(
   window.LINE_USER_ID,
   `✅ 予約が完了しました！\n\n📅 ${event.startStr}\n🕒 ${time}\n📍 ${place}`
+    console.log("📤 本人通知送信:", window.LINE_USER_ID);
 );
 
       alert("✅ 予約しました！");
