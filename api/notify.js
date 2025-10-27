@@ -1,15 +1,15 @@
+// /api/notify.js
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method Not Allowed" });
-  }
+  if (req.method !== "POST") return res.status(405).json({ error: "Method Not Allowed" });
+
+  const { userId, message } = req.body;
+
+  // 🔒 Messaging API チャネルアクセストークン
+  const CHANNEL_ACCESS_TOKEN =
+    "M9DY7der18lLq4mJ0X+ZKSHsKDbD8lRz9XtsQJQ5gdw+ECk1PdDvqEKohkCaSTptStCAL6GPiRVH2DIe+4PoRxP2CRG54dVMPuBj+Pzl1uzlGCgHd6jdWDPlgLnv4mpGFDot3f71YOGc8CouDQ/WnwdB04t89/1O/w1cDnyilFU=";
 
   try {
-    const { userId, message } = req.body; // ← req.json() ではなく req.body
-console.log("📩 LINE通知送信:", userId, message);
-    const CHANNEL_ACCESS_TOKEN =
-      "M9DY7der18lLq4mJ0X+ZKSHsKDbD8lRz9XtsQJQ5gdw+ECk1PdDvqEKohkCaSTptStCAL6GPiRVH2DIe+4PoRxP2CRG54dVMPuBj+Pzl1uzlGCgHd6jdWDPlgLnv4mpGFDot3f71YOGc8CouDQ/WnwdB04t89/1O/w1cDnyilFU=";
-
-    const result = await fetch("https://api.line.me/v2/bot/message/push", {
+    const lineRes = await fetch("https://api.line.me/v2/bot/message/push", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -21,11 +21,16 @@ console.log("📩 LINE通知送信:", userId, message);
       }),
     });
 
-    const text = await result.text();
-    console.log("LINE通知結果:", text);
-    res.status(result.status).json({ text });
+    const text = await lineRes.text();
+    console.log("📨 LINE APIレスポンス:", lineRes.status, text);
+
+    if (!lineRes.ok) {
+      return res.status(lineRes.status).json({ ok: false, text });
+    }
+
+    return res.status(200).json({ ok: true, text });
   } catch (err) {
-    console.error("Server Error:", err);
-    res.status(500).json({ error: "Internal Server Error" });
+    console.error("❌ 通知送信失敗:", err);
+    return res.status(500).json({ ok: false, error: err.message });
   }
 }
