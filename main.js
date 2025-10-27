@@ -177,21 +177,20 @@ joinBtn.onclick = async () => {
   else {
     console.log("✅ Supabase登録完了");
 
-    // === 管理者へLINE通知 ===
-    for (const adminId of ADMIN_LINE_IDS) {
-      console.log("📤 管理者通知送信:", adminId);
-      sendLineMessage(
-        adminId,
-        `✅ 新しい予約が入りました！\n👤 ${window.LINE_NAME}\n📅 ${event.startStr}`
-      );
-    }
+// === 管理者へLINE通知 ===
+for (const adminId of ADMIN_LINE_IDS) {
+  sendLineMessage(
+    adminId,
+    `✅ 新しい予約が入りました！\n\n👤 ${window.LINE_NAME}\n📛 セッション: ${event.title}\n📅 日時: ${event.startStr} ${time}\n📍 場所: ${place}`
+  );
+}
 
-    // === 予約者本人へ通知 ===
-    console.log("📤 本人通知送信:", window.LINE_USER_ID);
-    sendLineMessage(
-      window.LINE_USER_ID,
-      `✅ 予約完了！\n📅 ${event.startStr}`
-    );
+// === 本人へ通知 ===
+sendLineMessage(
+  window.LINE_USER_ID,
+  `✅ 予約が完了しました！\n\n📛 セッション: ${event.title}\n📅 日時: ${event.startStr} ${time}\n📍 場所: ${place}`
+);
+
 
     alert("✅ 予約しました！");
     modal.style.display = "none";
@@ -208,19 +207,20 @@ joinBtn.onclick = async () => {
       .eq("date", event.startStr);
     if (error) alert("キャンセルエラー: " + error.message);
     else {
-      // === 管理者へキャンセル通知 ===
+// === 管理者へキャンセル通知 ===
 for (const adminId of ADMIN_LINE_IDS) {
   sendLineMessage(
     adminId,
-    `⚠️ 予約キャンセルがありました\n\n👤 ${window.LINE_NAME}\n📅 ${event.startStr}\n🕒 ${time}\n📍 ${place}`
+    `⚠️ 予約キャンセルがありました\n\n👤 ${window.LINE_NAME}\n📛 セッション: ${event.title}\n📅 日時: ${event.startStr} ${time}\n📍 場所: ${place}`
   );
 }
 
-// === 予約者本人にも通知 ===
+// === 本人へ通知 ===
 sendLineMessage(
   window.LINE_USER_ID,
-  `🚫 キャンセルを受け付けました。\n\n📅 ${event.startStr}\n🕒 ${time}\n📍 ${place}`
+  `🚫 キャンセルを受け付けました。\n\n📛 セッション: ${event.title}\n📅 日時: ${event.startStr} ${time}\n📍 場所: ${place}`
 );
+
 
       alert("🚫 キャンセルしました");
       modal.style.display = "none";
