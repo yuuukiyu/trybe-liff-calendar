@@ -174,8 +174,9 @@ async function openModal(event) {
     if (error) alert("登録エラー: " + error.message);
     else {
       // === 管理者へLINE通知 ===
-         console.log("✅ Supabase登録完了");
+
 for (const adminId of ADMIN_LINE_IDS) {
+           console.log("✅ Supabase登録完了");
   sendLineMessage(
           console.log("📤 管理者通知送信:", adminId);
     adminId,
@@ -184,10 +185,11 @@ for (const adminId of ADMIN_LINE_IDS) {
 }
 
 // === 予約者本人にも通知 ===
+          console.log("📤 本人通知送信:", window.LINE_USER_ID);
 sendLineMessage(
   window.LINE_USER_ID,
   `✅ 予約が完了しました！\n\n📅 ${event.startStr}\n🕒 ${time}\n📍 ${place}`
-    console.log("📤 本人通知送信:", window.LINE_USER_ID);
+
 );
 
       alert("✅ 予約しました！");
