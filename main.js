@@ -1,5 +1,5 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
+import { sendLineMessage } from "./notify.js";
 // ===== Supabase設定 =====
 const SUPABASE_URL = "https://axeoezwxjjnghtyfmjnz.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_xoN3ouBTMqfSxKHwkpkmfg_4JwRIL-z";
@@ -172,6 +172,20 @@ async function openModal(event) {
     ]);
     if (error) alert("登録エラー: " + error.message);
     else {
+      // === 管理者へLINE通知 ===
+for (const adminId of ADMIN_LINE_IDS) {
+  sendLineMessage(
+    adminId,
+    `✅ 新しい予約が入りました！\n\n👤 ${window.LINE_NAME}\n📅 ${event.startStr}\n🕒 ${time}\n📍 ${place}`
+  );
+}
+
+// === 予約者本人にも通知 ===
+sendLineMessage(
+  window.LINE_USER_ID,
+  `✅ 予約が完了しました！\n\n📅 ${event.startStr}\n🕒 ${time}\n📍 ${place}`
+);
+
       alert("✅ 予約しました！");
       modal.style.display = "none";
       location.reload();
@@ -186,6 +200,20 @@ async function openModal(event) {
       .eq("date", event.startStr);
     if (error) alert("キャンセルエラー: " + error.message);
     else {
+      // === 管理者へキャンセル通知 ===
+for (const adminId of ADMIN_LINE_IDS) {
+  sendLineMessage(
+    adminId,
+    `⚠️ 予約キャンセルがありました\n\n👤 ${window.LINE_NAME}\n📅 ${event.startStr}\n🕒 ${time}\n📍 ${place}`
+  );
+}
+
+// === 予約者本人にも通知 ===
+sendLineMessage(
+  window.LINE_USER_ID,
+  `🚫 キャンセルを受け付けました。\n\n📅 ${event.startStr}\n🕒 ${time}\n📍 ${place}`
+);
+
       alert("🚫 キャンセルしました");
       modal.style.display = "none";
       location.reload();
