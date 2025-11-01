@@ -137,3 +137,28 @@ input {
 .small-delete:hover {
   opacity: 0.85;
 }
+/* ===== セッション削除モーダルのスクロール設定 ===== */
+#deleteSessionList {
+  max-height: 300px;
+  overflow-y: auto;
+  margin: 10px 0;
+  padding: 0;
+  text-align: left;
+  list-style: none;
+}
+
+#deleteSessionList::-webkit-scrollbar {
+  width: 8px;
+}
+#deleteSessionList::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+}
+#deleteSessionList::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}
+@media (max-width: 480px) {
+  #deleteSessionList {
+    max-height: 200px;
+  }
+}
