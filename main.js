@@ -10,8 +10,8 @@ const LIFF_ID = "2008316836-YLR2y1Zj";
 
 // 管理者LINE ID
 const ADMIN_LINE_IDS = [
-  "U491a0406fff27c1dfbcf5a9046d11b3a",
-  "U98a9bd633e9362a39fc4da2937d2a89f",
+  "U491a0406fff27c1dfbcf5a9046d11b3",
+  "U98a9bd633e9362a39fc4da2937d2a89",
 ];
 
 document.addEventListener("DOMContentLoaded", async () => {
