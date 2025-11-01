@@ -144,11 +144,27 @@ async function openModal(event) {
   header.innerHTML = `👥 参加者 <strong>${count}人</strong>`;
   participantList.appendChild(header);
 
+// ===== 参加者リスト（管理者のみ名前表示）=====
+const count = reservations?.length || 0;
+const header = document.createElement("p");
+header.innerHTML = `👥 参加者 <strong>${count}人</strong>`;
+participantList.appendChild(header);
+
+if (ADMIN_LINE_IDS.includes(window.LINE_USER_ID)) {
+  // 管理者 → 名前リスト表示
   reservations?.forEach((r) => {
     const li = document.createElement("li");
     li.textContent = r.user_name;
     participantList.appendChild(li);
   });
+} else {
+  // 一般ユーザー → 匿名（人数のみ）
+  const li = document.createElement("li");
+  li.textContent = "（参加者は当日のお楽しみに）";
+  li.style.color = "#888";
+  participantList.appendChild(li);
+}
+
 
   nameInput.value = window.LINE_NAME || "";
   modal.style.display = "flex";
