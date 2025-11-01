@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     const profile = await liff.getProfile();
-    window.LINE_USER_ID = profile.userId;
+    window.LINE_USER_ID = profile.userId
     window.LINE_NAME = profile.displayName;
     console.log("✅ LINEログイン:", window.LINE_NAME);
 
@@ -138,11 +138,6 @@ async function openModal(event) {
     console.error(error.message);
     return;
   }
-
-  const count = reservations?.length || 0;
-  const header = document.createElement("p");
-  header.innerHTML = `👥 参加者 <strong>${count}人</strong>`;
-  participantList.appendChild(header);
 
 // ===== 参加者リスト（管理者のみ名前表示）=====
 const count = reservations?.length || 0;
