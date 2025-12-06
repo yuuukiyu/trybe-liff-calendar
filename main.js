@@ -1,6 +1,6 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 import { sendLineMessage } from "./notify.js";
-
+console.log("LIFF:", window.liff);
 // ===== Supabase設定 =====
 const SUPABASE_URL = "https://axeoezwxjjnghtyfmjnz.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_xoN3ouBTMqfSxKHwkpkmfg_4JwRIL-z";
