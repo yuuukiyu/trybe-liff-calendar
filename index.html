@@ -12,6 +12,9 @@
   <!-- LIFF SDK（必ず main.js より先） -->
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
+  <!-- 🔥 Supabase CDN（必須） -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.46.1/dist/umd/supabase.min.js"></script>
+
   <!-- CSS -->
   <link rel="stylesheet" href="./style.css" />
 </head>
@@ -84,7 +87,7 @@
     </div>
   </div>
 
-  <!-- main.js（必ず最後に1回だけ！） -->
- <script type="module" src="./app.js?v=1"></script>
+  <!-- 🔥 main.js / app.js を最後に module として読み込み -->
+  <script type="module" src="./app.js?v=1"></script>
 </body>
 </html>
