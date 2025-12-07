@@ -1,10 +1,9 @@
-// ===== 変数定義（後で動的 import する）=====
-let supabase;
-let sendLineMessage;
-
 // ===== Supabase設定 =====
 const SUPABASE_URL = "https://axeoezwxjjnghtyfmjnz.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_xoN3ouBTMqfSxKHwkpkmfg_4JwRIL-z";
+
+// CDNで読み込んだ UMD 版を使用
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ===== LIFF設定 =====
 const LIFF_ID = "2008316836-YLR2y1Zj";
