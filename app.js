@@ -2,7 +2,7 @@ alert("app.js 読み込みOK");
 console.log("app.js loaded ✓");
 
 // ===== Supabase（ブラウザ用 ESM 正式版）=====
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/esm/supabase-js.mjs";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2?bundle";
 
 // LINE Notify
 import { sendLineMessage } from "./notify.js";
