@@ -15,23 +15,26 @@ const ADMIN_LINE_IDS = [
   "U98a9bd633e9362a39fc4da2937d2a89f",
 ];
 
-document.addEventListener("DOMContentLoaded", async () => {
+window.addEventListener("DOMContentLoaded", () => {
+  startApp();
+});
+
+async function startApp() {
   try {
     await liff.init({ liffId: LIFF_ID });
 
     if (!liff.isLoggedIn()) {
-      liff.login();
-      return;
+      return liff.login();
     }
 
     const profile = await liff.getProfile();
     window.LINE_USER_ID = profile.userId;
     window.LINE_NAME = profile.displayName;
-    console.log("✅ LINEログイン:", window.LINE_NAME);
+    console.log("LINE:", window.LINE_NAME);
 
     await initCalendar();
 
-    // 管理者UI表示
+    // 管理者表示
     if (ADMIN_LINE_IDS.includes(window.LINE_USER_ID)) {
       document.getElementById("openAdminModalBtn").style.display = "inline-block";
       setupAdminButtons();
@@ -39,7 +42,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   } catch (err) {
     console.error("❌ LIFF初期化エラー:", err);
   }
-});
+}
+
 
 // ===== カレンダー初期化 =====
 async function initCalendar() {
