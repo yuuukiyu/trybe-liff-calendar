@@ -1,24 +1,32 @@
 console.log("app.js loaded ✓");
 
-// ===== Supabase（安定版 import）=====
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+// =========================
+// Supabase 安定版 CDN
+// =========================
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.46.1/dist/esm/supabase.js";
 import { sendLineMessage } from "./notify.js";
 
-// ===== Supabase設定 =====
+// =========================
+// Supabase 設定
+// =========================
 const SUPABASE_URL = "https://axeoezwxjjnghtyfmjnz.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_xoN3ouBTMqfSxKHwkpkmfg_4JwRIL-z";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ===== LIFF設定 =====
+// =========================
+// LIFF 設定
+// =========================
 const LIFF_ID = "2008316836-YLR2y1Zj";
 
-// 管理者ID
+// 管理者 LINE ID
 const ADMIN_LINE_IDS = [
   "U491a0406fff27c1dfbcf5a9046d11b3a",
-  "U98a9bd633e9362a39fc4da2937d2a89f",
+  "U98a9bd633e9362a39fc4da2937d2a89f"
 ];
 
-// ===== DOM読み込み =====
+// =========================
+// DOM Ready
+// =========================
 document.addEventListener("DOMContentLoaded", async () => {
   try {
     await liff.init({ liffId: LIFF_ID });
@@ -32,11 +40,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.LINE_USER_ID = profile.userId;
     window.LINE_NAME = profile.displayName;
 
-    console.log("LINEログイン:", window.LINE_NAME);
+    console.log("LINE LOGIN:", window.LINE_NAME);
 
+    // カレンダー初期化
     await initCalendar();
 
-    // 管理者UI表示
+    // 管理者のみ追加UI表示
     if (ADMIN_LINE_IDS.includes(window.LINE_USER_ID)) {
       document.getElementById("openAdminModalBtn").style.display = "inline-block";
       setupAdminButtons();
@@ -44,17 +53,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   } catch (err) {
     console.error("❌ LIFF 初期化エラー:", err);
+    alert("LIFF 初期化エラー: " + err.message);
   }
 });
 
-
-// =========================================================================
-// ▼ カレンダー初期化
-// =========================================================================
+// ======================================================
+// カレンダー初期化
+// ======================================================
 async function initCalendar() {
   const calendarEl = document.getElementById("calendar");
 
-  const { data: events, error } = await supabase.from("events").select("*");
+  const { data: events, error } = await supabase
+    .from("events")
+    .select("*");
 
   if (error) {
     alert("イベント取得エラー: " + error.message);
@@ -68,20 +79,20 @@ async function initCalendar() {
       id: e.id,
       title: e.title,
       start: e.date,
-      extendedProps: { time: e.time, place: e.place },
+      extendedProps: { time: e.time, place: e.place }
     })),
-    eventClick: (info) => openModal(info.event),
+    eventClick: (info) => openModal(info.event)
   });
 
   calendar.render();
 
+  // 予約一覧（あなたの予約）
   await loadMySessions(events);
 }
 
-
-// =========================================================================
-// ▼ あなたの予約セッション一覧
-// =========================================================================
+// ======================================================
+// 「あなたの予約」読み込み
+// ======================================================
 async function loadMySessions(events) {
   const list = document.getElementById("mySessionList");
   list.innerHTML = "<li>読み込み中...</li>";
@@ -93,48 +104,34 @@ async function loadMySessions(events) {
     .eq("status", "reserved");
 
   if (error) {
-    list.innerHTML = "<li>読み込み失敗しました。</li>";
+    list.innerHTML = "<li>予約取得エラー</li>";
     return;
   }
 
   const today = new Date().toISOString().split("T")[0];
-  const futureReservations = reservations.filter((r) => r.date >= today);
+  const future = reservations.filter((r) => r.date >= today);
 
-  list.innerHTML = "";
-
-  if (!futureReservations.length) {
+  if (!future.length) {
     list.innerHTML = "<li>現在予約はありません。</li>";
     return;
   }
 
-  futureReservations.sort((a, b) => new Date(a.date) - new Date(b.date));
+  list.innerHTML = "";
 
-  for (const r of futureReservations) {
-    const event = events.find((e) => e.date === r.date);
-    const title = event?.title || "（不明なイベント）";
-    const time = event?.time || "";
-    const place = event?.place || "";
-
-    const { count } = await supabase
-      .from("reservations")
-      .select("*", { count: "exact", head: true })
-      .eq("date", r.date)
-      .eq("status", "reserved");
+  for (const r of future) {
+    const ev = events.find((e) => e.date === r.date);
 
     const li = document.createElement("li");
-    li.innerHTML = `
-      📅 ${r.date} ${time}｜${title}（${place}）<br>
-      👥 参加者：${count || 0}人
-    `;
+    li.innerHTML = `📅 ${r.date}｜${ev?.title || ""}（${ev?.place || ""}）`;
     list.appendChild(li);
   }
 }
 
-
-// =========================================================================
-// ▼ イベント詳細モーダル
-// =========================================================================
+// ======================================================
+// イベント詳細（モーダル）
+// ======================================================
 async function openModal(event) {
+
   const modal = document.getElementById("modal");
   const modalTitle = document.getElementById("modalTitle");
   const participantList = document.getElementById("participantList");
@@ -142,95 +139,81 @@ async function openModal(event) {
   const joinBtn = document.getElementById("joinBtn");
   const cancelBtn = document.getElementById("cancelBtn");
 
-  const { title, extendedProps } = event;
-  const { time, place } = extendedProps;
+  modalTitle.textContent = `${event.title}｜${event.startStr}`;
+  modal.style.display = "flex";
+  participantList.innerHTML = "<li>読み込み中...</li>";
 
-  modalTitle.textContent = `${title}｜${event.startStr}`;
-  participantList.innerHTML = "";
-
-  const { data: reservations, error } = await supabase
+  // 参加者一覧
+  const { data: reservations } = await supabase
     .from("reservations")
-    .select("user_id, user_name, status")
+    .select("*")
     .eq("date", event.startStr)
     .eq("status", "reserved");
 
-  if (error) {
-    participantList.innerHTML = "<li>参加者の取得に失敗しました。</li>";
-    return;
-  }
+  participantList.innerHTML = "";
 
-  const count = reservations.length;
+  const count = reservations?.length || 0;
   const header = document.createElement("p");
   header.innerHTML = `👥 参加者 <strong>${count}人</strong>`;
   participantList.appendChild(header);
 
   if (ADMIN_LINE_IDS.includes(window.LINE_USER_ID)) {
-    reservations.forEach((r) => {
+    // 管理者 → 名前公開
+    reservations?.forEach((r) => {
       const li = document.createElement("li");
       li.textContent = r.user_name;
       participantList.appendChild(li);
     });
   } else {
     const li = document.createElement("li");
-    li.textContent = "（参加者は当日のお楽しみに）";
+    li.textContent = "（当日のお楽しみ）";
     li.style.color = "#888";
     participantList.appendChild(li);
   }
 
-  nameInput.value = window.LINE_NAME || "";
-  modal.style.display = "flex";
-
-  const userReserved = reservations.some(
+  // 自分が予約しているか
+  const already = reservations.some(
     (r) => r.user_id === window.LINE_USER_ID
   );
 
-  joinBtn.style.display = userReserved ? "none" : "inline-block";
-  cancelBtn.style.display = userReserved ? "inline-block" : "none";
+  joinBtn.style.display = already ? "none" : "inline-block";
+  cancelBtn.style.display = already ? "inline-block" : "none";
 
-  // --- 参加登録
+  // 参加
   joinBtn.onclick = async () => {
-    const { error } = await supabase.from("reservations").insert([
+    await supabase.from("reservations").insert([
       {
         user_id: window.LINE_USER_ID,
         user_name: window.LINE_NAME,
         date: event.startStr,
         event_id: event.id,
-        status: "reserved",
-      },
+        status: "reserved"
+      }
     ]);
 
-    if (error) alert("登録エラー: " + error.message);
-    else {
-      alert("予約しました！");
-      modal.style.display = "none";
-      location.reload();
-    }
+    alert("予約しました！");
+    location.reload();
   };
 
-  // --- 予約キャンセル
+  // キャンセル
   cancelBtn.onclick = async () => {
-    const { error } = await supabase
+    await supabase
       .from("reservations")
       .update({ status: "canceled" })
       .eq("user_id", window.LINE_USER_ID)
       .eq("date", event.startStr);
 
-    if (error) alert("キャンセルエラー: " + error.message);
-    else {
-      alert("キャンセルしました");
-      modal.style.display = "none";
-      location.reload();
-    }
+    alert("キャンセルしました");
+    location.reload();
   };
 
   document.getElementById("closeBtn").onclick = () =>
     (modal.style.display = "none");
 }
 
-
-// =========================================================================
-// ▼ 管理者ボタン生成
-// =========================================================================
+// ======================================================
+// 管理者 UI
+// ======================================================
 function setupAdminButtons() {
   const openBtn = document.getElementById("openAdminModalBtn");
   const adminModal = document.getElementById("adminModal");
@@ -239,25 +222,21 @@ function setupAdminButtons() {
   openBtn.onclick = () => (adminModal.style.display = "flex");
   closeBtn.onclick = () => (adminModal.style.display = "none");
 
-  // --- セッション追加
+  // 追加ボタン
   document.getElementById("addEventBtn").onclick = async () => {
-    const title = document.getElementById("eventTitle").value.trim();
+    const title = document.getElementById("eventTitle").value;
     const date = document.getElementById("eventDate").value;
     const time = document.getElementById("eventTime").value;
-    const place = document.getElementById("eventPlace").value.trim();
+    const place = document.getElementById("eventPlace").value;
 
     if (!title || !date || !time || !place) {
-      alert("すべて入力してください");
+      alert("入力が不足しています");
       return;
     }
 
-    const { error } = await supabase.from("events").insert([{ title, date, time, place }]);
+    await supabase.from("events").insert([{ title, date, time, place }]);
 
-    if (error) alert("登録エラー: " + error.message);
-    else {
-      alert("追加しました！");
-      adminModal.style.display = "none";
-      location.reload();
-    }
+    alert("セッション追加しました！");
+    location.reload();
   };
 }
