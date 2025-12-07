@@ -60,7 +60,7 @@ async function initCalendar() {
     return;
   }
 
-  const calendar = new FullCalendar.Calendar(calendarEl, {
+const calendar = new window.FullCalendar.Calendar(calendarEl, {
     initialView: "dayGridMonth",
     locale: "ja",
     events: events.map((e) => ({
