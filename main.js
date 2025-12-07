@@ -1,45 +1,12 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 import { sendLineMessage } from "./notify.js";
-console.log("LIFF:", window.liff);
+
 // ===== Supabase設定 =====
 const SUPABASE_URL = "https://axeoezwxjjnghtyfmjnz.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_xoN3ouBTMqfSxKHwkpkmfg_4JwRIL-z";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ===== LIFF設定 =====
-const LIFF_ID = "2008316836-1K2erONZ";
 
-// 管理者LINE ID
-const ADMIN_LINE_IDS = [
-  "U491a0406fff27c1dfbcf5a9046d11b3a",
-  "U98a9bd633e9362a39fc4da2937d2a89f",
-];
-
-document.addEventListener("DOMContentLoaded", async () => {
-  try {
-    await liff.init({ liffId: LIFF_ID });
-
-    if (!liff.isLoggedIn()) {
-      liff.login();
-      return;
-    }
-
-    const profile = await liff.getProfile();
-    window.LINE_USER_ID = profile.userId;
-    window.LINE_NAME = profile.displayName;
-    console.log("✅ LINEログイン:", window.LINE_NAME);
-
-    await initCalendar();
-
-    // 管理者UI表示
-    if (ADMIN_LINE_IDS.includes(window.LINE_USER_ID)) {
-      document.getElementById("openAdminModalBtn").style.display = "inline-block";
-      setupAdminButtons();
-    }
-  } catch (err) {
-    console.error("❌ LIFF初期化エラー:", err);
-  }
-});
 
 // ===== カレンダー初期化 =====
 async function initCalendar() {
