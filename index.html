@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -9,9 +8,8 @@
   <!-- FullCalendar -->
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
-<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
-  <!-- LIFF SDK -->
+  <!-- ✅ LIFF SDK（1つだけ） -->
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <!-- CSS -->
@@ -38,26 +36,29 @@
       </div>
     </div>
   </div>
-<!-- セッション削除モーダル -->
-<div id="deleteSessionModal" class="modal">
-  <div class="modal-content">
-    <h3>🗑 セッション削除</h3>
-    <ul id="deleteSessionList"></ul>
-    <div class="btn-row">
-      <button id="closeDeleteModal" class="close">閉じる</button>
+
+  <!-- セッション削除モーダル -->
+  <div id="deleteSessionModal" class="modal">
+    <div class="modal-content">
+      <h3>🗑 セッション削除</h3>
+      <ul id="deleteSessionList"></ul>
+      <div class="btn-row">
+        <button id="closeDeleteModal" class="close">閉じる</button>
+      </div>
     </div>
   </div>
-</div>
-<!-- 過去セッションモーダル -->
-<div id="pastSessionsModal" class="modal">
-  <div class="modal-content">
-    <h3>📜 過去セッション一覧</h3>
-    <ul id="pastSessionsList"></ul>
-    <div class="btn-row">
-      <button id="closePastModal" class="close">閉じる</button>
+
+  <!-- 過去セッションモーダル -->
+  <div id="pastSessionsModal" class="modal">
+    <div class="modal-content">
+      <h3>📜 過去セッション一覧</h3>
+      <ul id="pastSessionsList"></ul>
+      <div class="btn-row">
+        <button id="closePastModal" class="close">閉じる</button>
+      </div>
     </div>
   </div>
-</div>
+
   <!-- あなたの予約セッション -->
   <div id="mySessions">
     <strong>あなたの予約セッション：</strong>
@@ -84,6 +85,6 @@
   </div>
 
   <!-- JS -->
-<script type="module" src="./main.js"></script>
+  <script type="module" src="./main.js"></script>
 </body>
 </html>
