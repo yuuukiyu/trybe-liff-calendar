@@ -1,6 +1,6 @@
 console.log("app.js loaded ✓");
 
-// ===== Supabase（jsDelivr 安定版）=====
+// ===== Supabase（jsDelivr ESM 版・公式推奨）=====
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 // LINE Notify
@@ -158,7 +158,6 @@ async function openModal(event) {
   header.innerHTML = `👥 参加者 <strong>${count}人</strong>`;
   participantList.appendChild(header);
 
-  // 管理者 → 名前表示
   if (ADMIN_LINE_IDS.includes(window.LINE_USER_ID)) {
     reservations?.forEach((r) => {
       const li = document.createElement("li");
@@ -199,7 +198,6 @@ async function openModal(event) {
       return;
     }
 
-    // 管理者に通知
     for (const adminId of ADMIN_LINE_IDS) {
       sendLineMessage(
         adminId,
