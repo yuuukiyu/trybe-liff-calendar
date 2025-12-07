@@ -7,7 +7,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_xoN3ouBTMqfSxKHwkpkmfg_4JwRIL-z";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ===== LIFF設定 =====
-const LIFF_ID = "2008316836-YLR2y1Zj";
+const LIFF_ID = "2008316836-1K2erONZ";
 
 // 管理者LINE ID
 const ADMIN_LINE_IDS = [
