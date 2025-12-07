@@ -1,11 +1,16 @@
+console.log("app.js loaded ✓");
 
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+// Supabase（esm.sh 経由で安定版）
+const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+
+// LINE Notify 用
 import { sendLineMessage } from "./notify.js";
-console.log("LIFF exists?", window.liff);
+
 // ===== Supabase設定 =====
 const SUPABASE_URL = "https://axeoezwxjjnghtyfmjnz.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_xoN3ouBTMqfSxKHwkpkmfg_4JwRIL-z";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 
 // ===== LIFF設定 =====
 const LIFF_ID = "2008316836-YLR2y1Zj";
