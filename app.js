@@ -1,4 +1,5 @@
 console.log("app.js loaded ✓");
+import { Calendar } from "https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/+esm";
 
 // ===== Supabase UMD =====
 const supabase = window.supabase.createClient(
