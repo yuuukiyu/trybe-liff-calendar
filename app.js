@@ -1,15 +1,18 @@
 console.log("app.js loaded ✓");
 
-// ===== Supabase（jsDelivr ESM 版・公式推奨）=====
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+// ===== Supabase UMD =====
+const supabase = window.supabase.createClient(
+  "https://axeoezwxjjnghtyfmjnz.supabase.co",
+  "sb_publishable_xoN3ouBTMqfSxKHwkpkmfg_4JwRIL-z"
+);
 
 // LINE Notify
 import { sendLineMessage } from "./notify.js";
 
 // ===== Supabase設定 =====
-const SUPABASE_URL = "https://axeoezwxjjnghtyfmjnz.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_xoN3ouBTMqfSxKHwkpkmfg_4JwRIL-z";
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+//const SUPABASE_URL = "https://axeoezwxjjnghtyfmjnz.supabase.co";
+//const SUPABASE_ANON_KEY = "sb_publishable_xoN3ouBTMqfSxKHwkpkmfg_4JwRIL-z";
+//const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ===== LIFF設定 =====
 const LIFF_ID = "2008316836-YLR2y1Zj";
