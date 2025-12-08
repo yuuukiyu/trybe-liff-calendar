@@ -1,5 +1,4 @@
 console.log("app.js loaded ✓");
-import { Calendar } from "https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/+esm";
 
 // ===== Supabase UMD =====
 const supabase = window.supabase.createClient(
@@ -64,9 +63,9 @@ async function initCalendar() {
     return;
   }
 
-  const calendar = new Calendar(calendarEl, {
-    initialView: "dayGridMonth",
-    locale: "ja",
+const calendar = new window.FullCalendar.Calendar(calendarEl, {
+  initialView: "dayGridMonth",
+  locale: "ja",
     events: events.map((e) => ({
       id: e.id,
       title: e.title,
