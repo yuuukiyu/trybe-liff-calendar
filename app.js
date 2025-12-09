@@ -84,30 +84,31 @@ async function loadMySessions(events) {
   const list = document.getElementById("mySessionList");
   list.innerHTML = "<li>読み込み中...</li>";
 
-  const { data: reservations, error } = await supabase
+  const { data: reservations, error: resError } = await supabase
     .from("reservations")
     .select("date, status")
     .eq("user_id", window.LINE_USER_ID)
     .eq("status", "reserved");
 
-  if (error) {
-    console.error("予約一覧取得エラー:", error.message);
+  if (resError) {
+    console.error("予約一覧取得エラー:", resError.message);
     list.innerHTML = "<li>読み込み失敗しました。</li>";
     return;
   }
 
+  // ✅ 今日以降の予約のみを表示
   const today = new Date().toISOString().split("T")[0];
-  const future = reservations.filter((r) => r.date >= today);
+  const futureReservations = reservations.filter((r) => r.date >= today);
 
   list.innerHTML = "";
-  if (!future.length) {
+  if (!futureReservations.length) {
     list.innerHTML = "<li>現在予約はありません。</li>";
     return;
   }
 
-  future.sort((a, b) => new Date(a.date) - new Date(b.date));
+  futureReservations.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  for (const r of future) {
+  for (const r of futureReservations) {
     const event = events.find((e) => e.date === r.date);
 
     const title = event?.title || "（不明なイベント）";
@@ -156,18 +157,21 @@ async function openModal(event) {
     return;
   }
 
+  // ===== 参加者リスト（管理者のみ名前表示）=====
   const count = reservations?.length || 0;
   const header = document.createElement("p");
   header.innerHTML = `👥 参加者 <strong>${count}人</strong>`;
   participantList.appendChild(header);
 
   if (ADMIN_LINE_IDS.includes(window.LINE_USER_ID)) {
+  // 管理者 → 名前リスト表示
     reservations?.forEach((r) => {
       const li = document.createElement("li");
       li.textContent = r.user_name;
       participantList.appendChild(li);
     });
   } else {
+    // 一般ユーザー → 匿名（人数のみ）
     const li = document.createElement("li");
     li.textContent = "（参加者は当日のお楽しみに）";
     li.style.color = "#888";
@@ -196,26 +200,33 @@ async function openModal(event) {
       },
     ]);
 
-    if (error) {
-      alert("登録エラー: " + error.message);
-      return;
-    }
-
-    for (const adminId of ADMIN_LINE_IDS) {
+    if (error) alert("登録エラー: " + error.message);
+    else {
+      // 通知
+      for (const adminId of ADMIN_LINE_IDS) {
+        sendLineMessage(
+          adminId,
+          `✅ 新しい予約が入りました！\n\n👤 ${window.LINE_NAME}\n📛 セッション: ${event.title}\n📅 日時: ${event.startStr} ${time}\n📍 場所: ${place}`
+        );
+      }      
       sendLineMessage(
-        adminId,
-        `✅ 新しい予約！\n👤 ${window.LINE_NAME}\n📅 ${event.startStr} ${time}\n📍 ${place}`
+        window.LINE_USER_ID,
+        `✅ 予約が完了しました！\n\n📛 セッション: ${event.title}\n📅 日時: ${event.startStr} ${time}\n📍 場所: ${place}`
       );
+
+      alert("✅ 予約しました！");
+      modal.style.display = "none";
+      location.reload();
     }
-
-    sendLineMessage(
-      window.LINE_USER_ID,
-      `✅ 予約完了！\n📅 ${event.startStr} ${time}\n📍 ${place}`
-    );
-
-    alert("予約しました！");
-    modal.style.display = "none";
-    location.reload();
+    
+    
+    
+    
+    
+    
+    
+    
+    
   };
 
   // キャンセル処理
@@ -225,27 +236,31 @@ async function openModal(event) {
       .update({ status: "canceled" })
       .eq("user_id", window.LINE_USER_ID)
       .eq("date", event.startStr);
-
-    if (error) {
-      alert("キャンセルエラー: " + error.message);
-      return;
-    }
-
-    for (const adminId of ADMIN_LINE_IDS) {
-      sendLineMessage(
-        adminId,
-        `⚠️ キャンセル\n👤 ${window.LINE_NAME}\n📅 ${event.startStr} ${time}\n📍 ${place}`
+    if (error) alert("キャンセルエラー: " + error.message);
+    else {
+      for (const adminId of ADMIN_LINE_IDS) {
+        sendLineMessage(
+          adminId,
+          `⚠️ 予約キャンセルがありました\n\n👤 ${window.LINE_NAME}\n📛 セッション: ${event.title}\n📅 日時: ${event.startStr} ${time}\n📍 場所: ${place}`
+        );
+      }     
+            sendLineMessage(
+        window.LINE_USER_ID,
+        `🚫 キャンセルを受け付けました。\n\n📛 セッション: ${event.title}\n📅 日時: ${event.startStr} ${time}\n📍 場所: ${place}`
       );
+      alert("🚫 キャンセルしました");
+      modal.style.display = "none";
+      location.reload();
     }
 
-    sendLineMessage(
-      window.LINE_USER_ID,
-      `🚫 キャンセルしました。\n📅 ${event.startStr} ${time}`
-    );
 
-    alert("キャンセルしました");
-    modal.style.display = "none";
-    location.reload();
+
+
+
+
+
+
+
   };
 
   document.getElementById("closeBtn").onclick = () =>
@@ -261,6 +276,7 @@ function setupAdminButtons() {
   openBtn.onclick = () => (adminModal.style.display = "flex");
   closeBtn.onclick = () => (adminModal.style.display = "none");
 
+  // 追加処理
   document.getElementById("addEventBtn").onclick = async () => {
     const title = document.getElementById("eventTitle").value.trim();
     const date = document.getElementById("eventDate").value;
@@ -272,17 +288,118 @@ function setupAdminButtons() {
       return;
     }
 
-    const { error } = await supabase.from("events").insert([
-      { title, date, time, place },
-    ]);
-
-    if (error) {
-      alert("登録エラー: " + error.message);
-      return;
+    const { error } = await supabase.from("events").insert([{ title, date, time, place }]);
+    if (error) alert("登録エラー: " + error.message);
+    else {
+      alert("✅ 新しいセッションを追加しました！");
+      adminModal.style.display = "none";
+      location.reload();
     }
-
-    alert("セッションを追加しました！");
-    adminModal.style.display = "none";
-    location.reload();
   };
+
+  // セッション削除ボタン
+  const deleteBtn = document.createElement("button");
+  deleteBtn.textContent = "🗑 セッション削除";
+  deleteBtn.style.marginTop = "10px";
+  deleteBtn.onclick = openDeleteSessionModal;
+  document.body.insertBefore(deleteBtn, document.getElementById("mySessions"));
+
+  // ✅ 過去セッション一覧ボタン
+  const pastBtn = document.createElement("button");
+  pastBtn.textContent = "📜 過去セッション一覧";
+  pastBtn.style.marginLeft = "10px";
+  pastBtn.onclick = openPastSessionsModal;
+  document.body.insertBefore(pastBtn, document.getElementById("mySessions"));
+}
+
+// ===== 管理者専用セッション削除 =====
+async function openDeleteSessionModal() {
+  const modal = document.getElementById("deleteSessionModal");
+  const list = document.getElementById("deleteSessionList");
+  modal.style.display = "flex";
+  list.innerHTML = "<li>読み込み中...</li>";
+
+  const { data: events, error } = await supabase
+    .from("events")
+    .select("id, title, date, time, place")
+    .order("date", { ascending: true });
+
+  if (error) {
+    list.innerHTML = "<li>取得エラー: " + error.message + "</li>";
+    return;
+  }
+
+  if (!events?.length) {
+    list.innerHTML = "<li>登録されているセッションはありません。</li>";
+    return;
+  }
+
+  const today = new Date().toISOString().split("T")[0];
+  const future = events.filter((e) => e.date >= today);
+  const past = events.filter((e) => e.date < today);
+
+  let html = "<h4>📅 今後のセッション</h4>";
+  future.forEach((e) => {
+    html += `
+      <li>
+        ${e.date} ${e.time}｜${e.title}（${e.place}）
+        <button class="small-delete" data-id="${e.id}" style="margin-left:10px;">削除</button>
+      </li>`;
+  });
+
+  html += "<hr><h4>📜 過去セッション（削除対象外）</h4>";
+  past.forEach((e) => {
+    html += `<li style="color:#888;">${e.date} ${e.time}｜${e.title}（${e.place}）</li>`;
+  });
+
+  list.innerHTML = html;
+
+  document.querySelectorAll(".small-delete").forEach((btn) => {
+    btn.onclick = async () => {
+      const eventId = btn.getAttribute("data-id");
+      if (!confirm("このセッションを削除しますか？\n予約者データも全て削除されます。")) return;
+
+      await supabase.from("reservations").delete().eq("event_id", eventId);
+      await supabase.from("events").delete().eq("id", eventId);
+
+      alert("🗑 セッションを削除しました！");
+      location.reload();
+    };
+  });
+
+  document.getElementById("closeDeleteModal").onclick = () =>
+    (modal.style.display = "none");
+}
+
+// ===== 過去セッション一覧（管理者のみ）=====
+async function openPastSessionsModal() {
+  const modal = document.getElementById("pastSessionsModal");
+  const list = document.getElementById("pastSessionsList");
+  modal.style.display = "flex";
+  list.innerHTML = "<li>読み込み中...</li>";
+
+  const { data: events, error } = await supabase
+    .from("events")
+    .select("title, date, time, place")
+    .order("date", { ascending: false });
+
+  if (error) {
+    list.innerHTML = "<li>取得エラー: " + error.message + "</li>";
+    return;
+  }
+
+  const today = new Date().toISOString().split("T")[0];
+  const past = events.filter((e) => e.date < today);
+
+  if (!past.length) {
+    list.innerHTML = "<li>過去セッションはまだありません。</li>";
+    return;
+  }
+  
+  list.innerHTML = past
+    .map((e) => `<li>${e.date} ${e.time}｜${e.title}（${e.place}）</li>`)
+    .join("");
+
+  document.getElementById("closePastModal").onclick = () =>
+    (modal.style.display = "none");
 }
